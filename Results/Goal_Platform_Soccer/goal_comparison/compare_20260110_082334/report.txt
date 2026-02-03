@@ -1,0 +1,56 @@
+======================================================================
+Goal Environment Algorithm Comparison Report (Multi-seed)
+======================================================================
+Generated: 2026-01-10 11:29:10
+Training Episodes: 50000
+Number of seeds: 1
+Seed list: [0]
+
+----------------------------------------------------------------------
+Algorithm     Last-100 Return         Success Rate           Training Time (min)
+----------------------------------------------------------------------
+LIRL         34.2±0.076.0±0.0%         85.4±0.0        
+PADDPG       -10.0±0.00.0±0.0%          40.5±0.0        
+PDQN         25.2±0.057.0±0.0%         55.2±0.0        
+QPAMDP       14.2±0.037.0±0.0%         4.4±0.0         
+----------------------------------------------------------------------
+
+Detailed metrics (aggregated across seeds):
+
+【LIRL】
+  Valid seeds: 1
+  Overall mean return: 16.5149 ± 0.0000
+  Overall success rate: 46.03% ± 0.00%
+  Last-100 episodes mean return: 34.1852 ± 0.0000
+  Last-100 episodes success rate: 76.00% ± 0.00%
+  Per-seed details:
+    Seed 0: return=34.19, success=76.0%, time=85.4 min
+
+【PADDPG】
+  Valid seeds: 1
+  Overall mean return: -9.7783 ± 0.0000
+  Overall success rate: 0.07% ± 0.00%
+  Last-100 episodes mean return: -10.0162 ± 0.0000
+  Last-100 episodes success rate: 0.00% ± 0.00%
+  Per-seed details:
+    Seed 0: return=-10.02, success=0.0%, time=40.5 min
+
+【PDQN】
+  Valid seeds: 1
+  Overall mean return: 26.3609 ± 0.0000
+  Overall success rate: 59.19% ± 0.00%
+  Last-100 episodes mean return: 25.2081 ± 0.0000
+  Last-100 episodes success rate: 57.00% ± 0.00%
+  Per-seed details:
+    Seed 0: return=25.21, success=57.0%, time=55.2 min
+
+【QPAMDP】
+  Valid seeds: 1
+  Overall mean return: 14.1272 ± 0.0000
+  Overall success rate: 37.23% ± 0.00%
+  Last-100 episodes mean return: 14.2342 ± 0.0000
+  Last-100 episodes success rate: 37.00% ± 0.00%
+  Per-seed details:
+    Seed 0: return=14.23, success=37.0%, time=4.4 min
+
+======================================================================

@@ -1,0 +1,90 @@
+{
+  "phase1": {
+    "avg": {
+      "Average Revenue": 4009.6722222224516,
+      "Average Output Energy (kWh)": 1669.1666666666624,
+      "Average Charging Power (kW)": 100.0,
+      "Average Station Utilization (%)": 8.550480640315042,
+      "Violation Rate (%)": 0.0,
+      "Success Rate (%)": 0.0
+    },
+    "std": {
+      "Average Revenue": 274.0434919186721,
+      "Average Output Energy (kWh)": 77.91109605754997,
+      "Average Charging Power (kW)": 0.0,
+      "Average Station Utilization (%)": 0.4631556881427368,
+      "Violation Rate (%)": 0.0,
+      "Success Rate (%)": 0.0
+    }
+  },
+  "phase2": {
+    "avg": {
+      "Average Revenue": 3924.983333333553,
+      "Average Output Energy (kWh)": 1675.8333333333292,
+      "Average Charging Power (kW)": 100.0,
+      "Average Station Utilization (%)": 8.600599113833775,
+      "Violation Rate (%)": 0.0,
+      "Success Rate (%)": 0.0
+    },
+    "std": {
+      "Average Revenue": 258.1283153615028,
+      "Average Output Energy (kWh)": 51.83440513361281,
+      "Average Charging Power (kW)": 0.0,
+      "Average Station Utilization (%)": 0.3779928995726382,
+      "Violation Rate (%)": 0.0,
+      "Success Rate (%)": 0.0
+    }
+  },
+  "phase3": {
+    "avg": {
+      "Average Revenue": 4034.1722213416906,
+      "Average Output Energy (kWh)": 1737.4999993642123,
+      "Average Charging Power (kW)": 99.9999999622147,
+      "Average Station Utilization (%)": 8.774541743445846,
+      "Violation Rate (%)": 0.0,
+      "Success Rate (%)": 0.0
+    },
+    "std": {
+      "Average Revenue": 160.29660954446615,
+      "Average Output Energy (kWh)": 68.13487490946078,
+      "Average Charging Power (kW)": 5.732609922431985e-08,
+      "Average Station Utilization (%)": 0.4579689083363721,
+      "Violation Rate (%)": 0.0,
+      "Success Rate (%)": 0.0
+    }
+  },
+  "config": {
+    "env_config": {
+      "n_stations": 50,
+      "p_max_original": 150.0,
+      "p_max_new": 100.0,
+      "arrival_rate": 0.8
+    },
+    "test_config": {
+      "num_test_runs": 10,
+      "max_steps_per_episode": 288
+    },
+    "train_config": {
+      "lr_mu": 0.0005,
+      "lr_q": 0.001,
+      "gamma": 0.98,
+      "batch_size": 128,
+      "buffer_limit": 1000000,
+      "tau": 0.005,
+      "hidden_dim1": 128,
+      "hidden_dim2": 64,
+      "critic_hidden": 32,
+      "memory_threshold": 500,
+      "training_iterations": 20,
+      "noise_params": {
+        "theta": 0.1,
+        "dt": 0.05,
+        "sigma": 0.1
+      },
+      "seed": 42,
+      "num_of_episodes": 300,
+      "print_interval": 20
+    }
+  },
+  "timestamp": "20251218_143120"
+}

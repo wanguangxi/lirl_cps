@@ -1,0 +1,13 @@
+{
+  "num_episodes": 1000,
+  "num_test_episodes": 10,
+  "max_steps": 288,
+  "n_stations": 5,
+  "p_max": 150.0,
+  "arrival_rate": 0.75,
+  "seed": 3047,
+  "save_dir": "algorithm_comparison_20260116_150929",
+  "print_interval": 50,
+  "test_only": false,
+  "model_dir": null
+}

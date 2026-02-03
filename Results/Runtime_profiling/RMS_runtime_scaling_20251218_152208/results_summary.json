@@ -1,0 +1,45 @@
+{
+  "timestamp": "20260118_025311",
+  "runtime_test_device": "CPU",
+  "experiments": {
+    "small": {
+      "config": {
+        "num_of_jobs": 100,
+        "num_of_robots": 5
+      },
+      "training_time": 651.1249041557312,
+      "timing": {
+        "network_forward_ms": 0.1346614354005169,
+        "hungarian_ms": 0.0032419477990288216,
+        "qp_ms": 0.3476698862007879,
+        "total_decision_ms": 1.1329886035999153
+      }
+    },
+    "medium": {
+      "config": {
+        "num_of_jobs": 100,
+        "num_of_robots": 50
+      },
+      "training_time": 924.3367369174957,
+      "timing": {
+        "network_forward_ms": 0.14370504480039017,
+        "hungarian_ms": 0.013259145399069895,
+        "qp_ms": 0.3492920516026061,
+        "total_decision_ms": 2.0890789109965224
+      }
+    },
+    "large": {
+      "config": {
+        "num_of_jobs": 1000,
+        "num_of_robots": 100
+      },
+      "training_time": 29046.954944372177,
+      "timing": {
+        "network_forward_ms": 0.26746905730593423,
+        "hungarian_ms": 0.10885401035928224,
+        "qp_ms": 0.35877950805843284,
+        "total_decision_ms": 7.377469997152439
+      }
+    }
+  }
+}

@@ -1,0 +1,41 @@
+{
+  "algorithms": [
+    "LIRL",
+    "PDQN",
+    "HPPO",
+    "LPPO",
+    "CPO"
+  ],
+  "metrics": {
+    "LIRL": {
+      "station_utilization": 51.97568081558211,
+      "charging_success_rate": 89.05763059625625,
+      "energy_delivered": 11780.0,
+      "violation_rate": 0.0
+    },
+    "PDQN": {
+      "station_utilization": 43.41667690532835,
+      "charging_success_rate": 75.92506100890633,
+      "energy_delivered": 9638.75,
+      "violation_rate": 21.934502918512464
+    },
+    "HPPO": {
+      "station_utilization": 36.49281736846943,
+      "charging_success_rate": 47.30499649704177,
+      "energy_delivered": 6055.93994140625,
+      "violation_rate": 96.61433503949681
+    },
+    "LPPO": {
+      "station_utilization": 16.10428358097261,
+      "charging_success_rate": 21.264238867089684,
+      "energy_delivered": 2624.888671875,
+      "violation_rate": 98.01775514754509
+    },
+    "CPO": {
+      "station_utilization": 16.149400671089357,
+      "charging_success_rate": 21.54552162891061,
+      "energy_delivered": 2725.29443359375,
+      "violation_rate": 98.8914787445216
+    }
+  }
+}

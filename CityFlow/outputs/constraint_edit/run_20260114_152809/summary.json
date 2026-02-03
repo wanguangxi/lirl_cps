@@ -1,0 +1,29 @@
+{
+  "experiment_info": {
+    "timestamp": "20260114_152809",
+    "model_path": "/home/one/Project/LIRL/LIRL-CPS-main/CityFlow/outputs/algorithm_compare/run_20260114_100609/LIRL_model.pt",
+    "accident_intersection": "intersection_1_1",
+    "eval_episodes": 2,
+    "max_transfer_episodes": 10
+  },
+  "results": {
+    "Original": {
+      "throughput": 23918.0,
+      "travel_time": 1518.1680555555556
+    },
+    "Constrained (No Retrain)": {
+      "throughput": 23918.0,
+      "travel_time": 1518.1680555555556
+    },
+    "Constrained (Transfer)": {
+      "throughput": 35460.0,
+      "travel_time": 1378.2010416666667
+    }
+  },
+  "transfer_learning": {
+    "total_episodes": 10,
+    "total_time": 217.3227198123932,
+    "convergence_episode": 8,
+    "convergence_time": 181.47778725624084
+  }
+}

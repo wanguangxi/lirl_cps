@@ -1,0 +1,32 @@
+{
+  "experiment_info": {
+    "timestamp": "20260114_093540",
+    "algorithms": [
+      "Lagrangian-PPO",
+      "CPO"
+    ],
+    "train_episodes": 3,
+    "eval_episodes": 1,
+    "state_size": 105,
+    "num_intersections": 15,
+    "num_phases": 8
+  },
+  "evaluation_summary": {
+    "Lagrangian-PPO": {
+      "mean_throughput": 34.0,
+      "std_throughput": 0.0,
+      "mean_travel_time": 1801.0,
+      "std_travel_time": 0.0,
+      "mean_violation_rate": 16.975,
+      "std_violation_rate": 0.0
+    },
+    "CPO": {
+      "mean_throughput": 136.0,
+      "std_throughput": 0.0,
+      "mean_travel_time": 1801.0,
+      "std_travel_time": 0.0,
+      "mean_violation_rate": 15.980555555555556,
+      "std_violation_rate": 0.0
+    }
+  }
+}

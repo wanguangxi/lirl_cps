@@ -1,0 +1,137 @@
+{
+  "total_reward": -0.4085951488882277,
+  "steps": 5,
+  "makespan": 137.25999450683594,
+  "total_energy": 291.7439957275391,
+  "line_end_times": [
+    73.7699966430664,
+    137.25999450683594
+  ],
+  "line_busy_times": [
+    73.7699966430664,
+    137.25999450683594
+  ],
+  "assigned_per_line": [
+    2,
+    3
+  ],
+  "operation_schedules": [
+    {
+      "workpiece": 3,
+      "line": 0,
+      "start": 0.0,
+      "end": 40.69,
+      "op_times": [
+        13.6,
+        5.5,
+        21.59
+      ],
+      "op_energies": [
+        12.022,
+        5.01,
+        13.509
+      ]
+    },
+    {
+      "workpiece": 4,
+      "line": 0,
+      "start": 40.689998626708984,
+      "end": 73.76999862670898,
+      "op_times": [
+        13.6,
+        5.5,
+        13.98
+      ],
+      "op_energies": [
+        12.022,
+        5.01,
+        11.545
+      ]
+    },
+    {
+      "workpiece": 1,
+      "line": 1,
+      "start": 0.0,
+      "end": 40.68,
+      "op_times": [
+        13.6,
+        13.1,
+        13.98
+      ],
+      "op_energies": [
+        12.022,
+        10.339,
+        11.545
+      ]
+    },
+    {
+      "workpiece": 0,
+      "line": 1,
+      "start": 40.68000030517578,
+      "end": 88.97000030517577,
+      "op_times": [
+        13.6,
+        13.1,
+        21.59
+      ],
+      "op_energies": [
+        12.022,
+        10.339,
+        13.509
+      ]
+    },
+    {
+      "workpiece": 2,
+      "line": 1,
+      "start": 88.97000122070312,
+      "end": 137.26000122070312,
+      "op_times": [
+        13.6,
+        13.1,
+        21.59
+      ],
+      "op_energies": [
+        12.022,
+        10.339,
+        13.509
+      ]
+    }
+  ],
+  "line_utilization": [
+    0.5374471775852537,
+    1.0
+  ],
+  "model_path": "cross_runs\\workpieces_5\\ppo_production_line_policy.zip",
+  "config": {
+    "num_workpieces": 5,
+    "total_timesteps": 200000,
+    "num_episodes": 500,
+    "learning_rate": 0.0003,
+    "gamma": 0.99,
+    "gae_lambda": 0.95,
+    "ent_coef": 0.01,
+    "clip_range": 0.2,
+    "n_steps": 2048,
+    "batch_size": 256,
+    "policy_hidden_sizes": [
+      256,
+      128
+    ],
+    "num_envs": 1,
+    "max_episode_steps": null,
+    "seed": 42,
+    "config_path": null,
+    "save_dir": "cross_runs\\workpieces_5",
+    "gantt_filename": "ppo_gantt_5.png",
+    "schedule_filename": "ppo_schedule_5.json",
+    "progress_log_interval": 10,
+    "sb3_verbose": 0,
+    "best_training_schedule_filename": "training_best_schedule_5.json",
+    "best_training_gantt_filename": "training_best_gantt_5.png"
+  },
+  "best_training_schedule_path": "cross_runs\\workpieces_5\\training_best_schedule_5.json",
+  "best_training_violations": 0,
+  "best_training_gantt_path": null,
+  "training_history_path": "cross_runs\\workpieces_5\\training_history.json",
+  "training_curve_path": "cross_runs\\workpieces_5\\training_curve.png"
+}

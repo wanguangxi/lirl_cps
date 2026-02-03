@@ -1,0 +1,59 @@
+{
+  "experiment_info": {
+    "timestamp": "20260115_111112",
+    "algorithms": [
+      "LIRL",
+      "PDQN",
+      "HPPO",
+      "Lagrangian-PPO",
+      "CPO"
+    ],
+    "train_episodes": 300,
+    "eval_episodes": 10,
+    "state_size": 105,
+    "num_intersections": 15,
+    "num_phases": 8
+  },
+  "evaluation_summary": {
+    "LIRL": {
+      "mean_throughput": 35460.0,
+      "std_throughput": 0.0,
+      "mean_travel_time": 1378.2010416666667,
+      "std_travel_time": 0.0,
+      "mean_violation_rate": 0.0,
+      "std_violation_rate": 0.0
+    },
+    "PDQN": {
+      "mean_throughput": 14746.0,
+      "std_throughput": 0.0,
+      "mean_travel_time": 1508.0013541666667,
+      "std_travel_time": 0.0,
+      "mean_violation_rate": 29.086111111111116,
+      "std_violation_rate": 3.552713678800501e-15
+    },
+    "HPPO": {
+      "mean_throughput": 7474.0,
+      "std_throughput": 0.0,
+      "mean_travel_time": 1656.1681249999997,
+      "std_travel_time": 2.2737367544323206e-13,
+      "mean_violation_rate": 17.97222222222222,
+      "std_violation_rate": 0.0
+    },
+    "Lagrangian-PPO": {
+      "mean_throughput": 68.0,
+      "std_throughput": 0.0,
+      "mean_travel_time": 1801.0,
+      "std_travel_time": 0.0,
+      "mean_violation_rate": 13.0,
+      "std_violation_rate": 0.0
+    },
+    "CPO": {
+      "mean_throughput": 68.0,
+      "std_throughput": 0.0,
+      "mean_travel_time": 1801.0,
+      "std_travel_time": 0.0,
+      "mean_violation_rate": 15.0,
+      "std_violation_rate": 0.0
+    }
+  }
+}

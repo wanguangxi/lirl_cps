@@ -1,0 +1,26 @@
+# Dependencies for the CityFlow multi-intersection traffic signal control RL environment
+
+# Core dependencies
+numpy>=1.21.0
+gymnasium>=0.28.0
+
+# RL framework
+stable-baselines3>=2.0.0
+
+# Optional: TensorBoard visualization
+tensorboard>=2.11.0
+
+# Optional: progress bar
+tqdm>=4.64.0
+
+# Note: CityFlow must be installed separately. See:
+# https://cityflow.readthedocs.io/en/latest/install.html
+# 
+# Install (recommended: build from source):
+# pip install cityflow
+# 
+# Or install from source:
+# git clone https://github.com/cityflow-project/CityFlow.git
+# cd CityFlow
+# pip install .
+

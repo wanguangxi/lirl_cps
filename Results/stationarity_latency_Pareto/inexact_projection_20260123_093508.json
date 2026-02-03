@@ -1,0 +1,200 @@
+{
+  "large": {
+    "scale_config": {
+      "num_of_jobs": 1000,
+      "num_of_robots": 100,
+      "name": "Large (1000\u00d7100)"
+    },
+    "results": [
+      {
+        "stationarity_mean": 0.4968427245559418,
+        "stationarity_std": 0.28469651582477196,
+        "optimality_gap_mean": 0.0,
+        "duality_gap_mean": 0.0,
+        "residual_mean": 0.0,
+        "logical_violations_total": 0,
+        "latency_p50": 1.0776980052469298,
+        "latency_p95": 5.1735855093284036,
+        "latency_p99": 7.367066520528169,
+        "latency_mean": 1.5643758357531625,
+        "hungarian_time_mean": 0.5317641228743014,
+        "qp_time_mean": 0.36536616432858865,
+        "num_samples": 10000,
+        "config": {
+          "qp_tol": 1e-08,
+          "qp_maxiter": 500,
+          "hungarian_topk": null,
+          "effective_eps": 0.003001
+        }
+      },
+      {
+        "stationarity_mean": 0.4957750774115095,
+        "stationarity_std": 0.28398762794720916,
+        "optimality_gap_mean": 0.0,
+        "duality_gap_mean": 0.0,
+        "residual_mean": 0.0,
+        "logical_violations_total": 0,
+        "latency_p50": 1.1078780007665046,
+        "latency_p95": 1.7718920964398415,
+        "latency_p99": 2.180528286698973,
+        "latency_mean": 1.1584231898290456,
+        "hungarian_time_mean": 0.14643248813954413,
+        "qp_time_mean": 0.3479567220376339,
+        "num_samples": 10000,
+        "config": {
+          "qp_tol": 1e-06,
+          "qp_maxiter": 200,
+          "hungarian_topk": 100,
+          "effective_eps": 0.0151
+        }
+      },
+      {
+        "stationarity_mean": 0.49578803454085846,
+        "stationarity_std": 0.28408163225920524,
+        "optimality_gap_mean": 0.0,
+        "duality_gap_mean": 0.0,
+        "residual_mean": 0.0,
+        "logical_violations_total": 0,
+        "latency_p50": 1.1274645003140904,
+        "latency_p95": 1.7184553085826337,
+        "latency_p99": 2.0397455210331836,
+        "latency_mean": 1.1561827352255933,
+        "hungarian_time_mean": 0.1298175607138546,
+        "qp_time_mean": 0.34998151735053395,
+        "num_samples": 10000,
+        "config": {
+          "qp_tol": 0.0001,
+          "qp_maxiter": 100,
+          "hungarian_topk": 50,
+          "effective_eps": 0.04
+        }
+      },
+      {
+        "stationarity_mean": 0.498095815069664,
+        "stationarity_std": 0.2935484954835478,
+        "optimality_gap_mean": 0.0,
+        "duality_gap_mean": 0.0,
+        "residual_mean": 0.0,
+        "logical_violations_total": 0,
+        "latency_p50": 1.1056815055781044,
+        "latency_p95": 1.7361300044285592,
+        "latency_p99": 1.9318661630677527,
+        "latency_mean": 1.1496770982645101,
+        "hungarian_time_mean": 0.1203503640164854,
+        "qp_time_mean": 0.34759612850612026,
+        "num_samples": 10000,
+        "config": {
+          "qp_tol": 0.001,
+          "qp_maxiter": 50,
+          "hungarian_topk": 30,
+          "effective_eps": 0.15333333333333335
+        }
+      },
+      {
+        "stationarity_mean": 0.4878973993565388,
+        "stationarity_std": 0.2879908956937495,
+        "optimality_gap_mean": 0.0,
+        "duality_gap_mean": 0.0,
+        "residual_mean": 0.0,
+        "logical_violations_total": 0,
+        "latency_p50": 1.172674004919827,
+        "latency_p95": 1.7513812948891425,
+        "latency_p99": 2.011943906982197,
+        "latency_mean": 1.1963621228700503,
+        "hungarian_time_mean": 0.1313407090041437,
+        "qp_time_mean": 0.3523904516288894,
+        "num_samples": 10000,
+        "config": {
+          "qp_tol": 0.01,
+          "qp_maxiter": 20,
+          "hungarian_topk": 20,
+          "effective_eps": 1.1
+        }
+      },
+      {
+        "stationarity_mean": 0.48913243303710535,
+        "stationarity_std": 0.28819278526589964,
+        "optimality_gap_mean": 0.0,
+        "duality_gap_mean": 0.0,
+        "residual_mean": 0.0,
+        "logical_violations_total": 0,
+        "latency_p50": 1.249396002094727,
+        "latency_p95": 1.900458599993726,
+        "latency_p99": 3.3811007703479934,
+        "latency_mean": 1.3361284533690196,
+        "hungarian_time_mean": 0.1277851390943397,
+        "qp_time_mean": 0.4003635312139522,
+        "num_samples": 10000,
+        "config": {
+          "qp_tol": 0.05,
+          "qp_maxiter": 10,
+          "hungarian_topk": 10,
+          "effective_eps": 5.199999999999999
+        }
+      },
+      {
+        "stationarity_mean": 0.4726097133652671,
+        "stationarity_std": 0.29013249143140535,
+        "optimality_gap_mean": 0.0,
+        "duality_gap_mean": 0.0,
+        "residual_mean": 0.0,
+        "logical_violations_total": 0,
+        "latency_p50": 1.3204464994487353,
+        "latency_p95": 1.9886908979970022,
+        "latency_p99": 3.730354422441454,
+        "latency_mean": 1.4268395332008368,
+        "hungarian_time_mean": 0.13101211934117601,
+        "qp_time_mean": 0.42969265936990264,
+        "num_samples": 10000,
+        "config": {
+          "qp_tol": 0.1,
+          "qp_maxiter": 5,
+          "hungarian_topk": 5,
+          "effective_eps": 10.399999999999999
+        }
+      },
+      {
+        "stationarity_mean": 0.48357236168814954,
+        "stationarity_std": 0.2893799440054952,
+        "optimality_gap_mean": 0.0,
+        "duality_gap_mean": 0.0,
+        "residual_mean": 0.0,
+        "logical_violations_total": 0,
+        "latency_p50": 1.3529395073419437,
+        "latency_p95": 2.0482245563471224,
+        "latency_p99": 4.13834450097057,
+        "latency_mean": 1.460919317099615,
+        "hungarian_time_mean": 0.13077066288096828,
+        "qp_time_mean": 0.44078986038803125,
+        "num_samples": 10000,
+        "config": {
+          "qp_tol": 0.2,
+          "qp_maxiter": 3,
+          "hungarian_topk": 3,
+          "effective_eps": 20.666666666666664
+        }
+      },
+      {
+        "stationarity_mean": 0.48260557959317896,
+        "stationarity_std": 0.29024142641420747,
+        "optimality_gap_mean": 0.0,
+        "duality_gap_mean": 0.0,
+        "residual_mean": 0.0,
+        "logical_violations_total": 0,
+        "latency_p50": 1.3181559988879599,
+        "latency_p95": 1.989124101964989,
+        "latency_p99": 3.9789528632536544,
+        "latency_mean": 1.4264229883556254,
+        "hungarian_time_mean": 0.1273462111770641,
+        "qp_time_mean": 0.4360890472555184,
+        "num_samples": 10000,
+        "config": {
+          "qp_tol": 0.5,
+          "qp_maxiter": 1,
+          "hungarian_topk": 1,
+          "effective_eps": 52.0
+        }
+      }
+    ]
+  }
+}

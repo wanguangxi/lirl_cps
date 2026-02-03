@@ -1,0 +1,63 @@
+================================================================================
+Soccer Environment Algorithm Comparison Report
+================================================================================
+Generated: 2025-12-27 18:29:33
+Training Episodes: 20000
+Random seed: 3279
+
+--------------------------------------------------------------------------------
+Algorithm     Mean Return     Goal Rate       Last-100 Return     Last-100 Goal Rate    Training Time
+--------------------------------------------------------------------------------
+LIRL         5.99         62.1        % 7.95           91.0          % 109.0 min     
+PADDPG       4.16         33.9        % 6.55           67.0          % 194.0 min     
+PDQN         5.94         60.2        % 7.56           84.0          % 106.5 min     
+QPAMDP       0.20         0.0         % 0.69           0.0           % 23.4 min      
+--------------------------------------------------------------------------------
+
+Detailed metrics:
+
+【LIRL】
+  Overall mean return: 5.9930 ± 3.4630
+  Overall goal rate: 62.05%
+  Last-100 episodes mean return: 7.9536
+  Last-100 episodes goal rate: 91.00%
+  Max return: 10.04
+  Min return: -0.88
+  Mean steps: 129.14
+  Mean steps to goal: 118.13
+  Training time: 6539.11 s (108.99 min)
+
+【PADDPG】
+  Overall mean return: 4.1570 ± 3.3253
+  Overall goal rate: 33.87%
+  Last-100 episodes mean return: 6.5536
+  Last-100 episodes goal rate: 67.00%
+  Max return: 9.97
+  Min return: -0.86
+  Mean steps: 140.02
+  Mean steps to goal: 132.65
+  Training time: 11638.98 s (193.98 min)
+
+【PDQN】
+  Overall mean return: 5.9440 ± 3.3896
+  Overall goal rate: 60.20%
+  Last-100 episodes mean return: 7.5593
+  Last-100 episodes goal rate: 84.00%
+  Max return: 9.92
+  Min return: -0.98
+  Mean steps: 131.66
+  Mean steps to goal: 126.09
+  Training time: 6387.21 s (106.45 min)
+
+【QPAMDP】
+  Overall mean return: 0.2026 ± 0.6730
+  Overall goal rate: 0.00%
+  Last-100 episodes mean return: 0.6859
+  Last-100 episodes goal rate: 0.00%
+  Max return: 8.86
+  Min return: -0.92
+  Mean steps: 0.00
+  Mean steps to goal: 0.00
+  Training time: 1403.74 s (23.40 min)
+
+================================================================================

@@ -1,0 +1,52 @@
+{
+  "timestamp": "20260123_110712",
+  "config": {
+    "num_of_jobs": 100,
+    "num_of_robots": 5,
+    "max_operations": 5,
+    "alpha": 0.5,
+    "beta": 0.5,
+    "hidden_dim1": 128,
+    "hidden_dim2": 64,
+    "hidden_dim": 256,
+    "latent_dim": 32,
+    "num_timing_episodes": 100,
+    "warmup_iterations": 50,
+    "max_hungarian_size": 50,
+    "seed": 42
+  },
+  "results": {
+    "LIRL": {
+      "network_ms": 0.14976593060360754,
+      "postprocess_ms": 1.144041836820543,
+      "total_ms": 1.2949314083816716,
+      "hungarian_ms": 0.0038047795312013476,
+      "qp_ms": 0.41905674360052214
+    },
+    "SAC-Lag": {
+      "network_ms": 0.2671143320156261,
+      "postprocess_ms": 0.0364445140742464,
+      "total_ms": 0.3046963488956681
+    },
+    "CPO": {
+      "network_ms": 0.42455456393712665,
+      "postprocess_ms": 0.03795638912240974,
+      "total_ms": 0.4637656744359992
+    },
+    "H-PPO": {
+      "network_ms": 0.236704805084737,
+      "postprocess_ms": 0.01415788995102048,
+      "total_ms": 0.25189442395523653
+    },
+    "HyAR": {
+      "network_ms": 0.20855317272595128,
+      "postprocess_ms": 0.035171550795785156,
+      "total_ms": 0.244769747009268
+    },
+    "PDQN": {
+      "network_ms": 0.028626253859256393,
+      "postprocess_ms": 0.6221531545137986,
+      "total_ms": 0.6520841862139058
+    }
+  }
+}
