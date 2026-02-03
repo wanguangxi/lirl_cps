@@ -1,0 +1,66 @@
+{
+  "phase1": {
+    "avg": {
+      "Average Revenue": 4148.06111111133,
+      "Violation Rate (%)": 0.0
+    },
+    "std": {
+      "Average Revenue": 224.55168841851724,
+      "Violation Rate (%)": 0.0
+    }
+  },
+  "phase2": {
+    "avg": {
+      "Average Revenue": 3913.150000000211,
+      "Violation Rate (%)": 0.0
+    },
+    "std": {
+      "Average Revenue": 274.1147885737325,
+      "Violation Rate (%)": 0.0
+    }
+  },
+  "phase3": {
+    "avg": {
+      "Average Revenue": 4034.1722213416906,
+      "Violation Rate (%)": 0.0
+    },
+    "std": {
+      "Average Revenue": 160.29660954446615,
+      "Violation Rate (%)": 0.0
+    }
+  },
+  "config": {
+    "env_config": {
+      "n_stations": 50,
+      "p_max_original": 150.0,
+      "p_max_new": 100.0,
+      "arrival_rate": 0.8
+    },
+    "test_config": {
+      "num_test_runs": 10,
+      "max_steps_per_episode": 288
+    },
+    "train_config": {
+      "lr_mu": 0.0005,
+      "lr_q": 0.001,
+      "gamma": 0.98,
+      "batch_size": 128,
+      "buffer_limit": 1000000,
+      "tau": 0.005,
+      "hidden_dim1": 128,
+      "hidden_dim2": 64,
+      "critic_hidden": 32,
+      "memory_threshold": 500,
+      "training_iterations": 20,
+      "noise_params": {
+        "theta": 0.1,
+        "dt": 0.05,
+        "sigma": 0.1
+      },
+      "seed": 42,
+      "num_of_episodes": 300,
+      "print_interval": 20
+    }
+  },
+  "timestamp": "20251218_143729"
+}

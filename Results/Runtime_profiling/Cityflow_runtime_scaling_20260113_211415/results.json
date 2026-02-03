@@ -1,0 +1,173 @@
+{
+  "timestamp": "20260113_211415",
+  "device": "cuda",
+  "num_train_episodes": 50,
+  "num_test_steps": 1000,
+  "scales": {
+    "City_3_5": {
+      "training": {
+        "scale_name": "City_3_5",
+        "num_intersections": 15,
+        "state_size": 105,
+        "action_size": 30,
+        "training_time": 941.1649072170258,
+        "final_avg_reward": 25758.420000000006,
+        "final_avg_travel_time": 1379.7620972222223,
+        "model_path": "/home/one/Project/LIRL/LIRL-CPS-main/CityFlow/outputs/scale_benchmark/scale_benchmark_20260113_211415/City_3_5/model.pt"
+      },
+      "timing": {
+        "scale_name": "City_3_5",
+        "num_intersections": 15,
+        "num_steps": 1000,
+        "device": "cuda",
+        "timing_stats": {
+          "nn_inference": {
+            "mean": 0.4787769726244733,
+            "std": 0.3708953541860949,
+            "min": 0.21601608023047447,
+            "max": 2.7600208995863795,
+            "count": 1000
+          },
+          "discrete_mapping": {
+            "mean": 0.15907514467835426,
+            "std": 0.03384679656681692,
+            "min": 0.10007282253354788,
+            "max": 0.5348153645172715,
+            "count": 1000
+          },
+          "continuous_mapping": {
+            "mean": 0.12415055895689876,
+            "std": 0.023618996009082377,
+            "min": 0.10575482156127691,
+            "max": 0.4243359435349703,
+            "count": 1000
+          },
+          "projection": {
+            "mean": 0.4362519767601043,
+            "std": 0.0855961430013744,
+            "min": 0.3556200535967946,
+            "max": 1.3762670569121838,
+            "count": 1000
+          },
+          "total_decision": {
+            "mean": 0.9232497041812167,
+            "std": 0.40173222929105346,
+            "min": 0.5778728518635035,
+            "max": 3.21097404230386,
+            "count": 1000
+          }
+        }
+      }
+    },
+    "City_5_10": {
+      "training": {
+        "scale_name": "City_5_10",
+        "num_intersections": 50,
+        "state_size": 350,
+        "action_size": 100,
+        "training_time": 2558.290863275528,
+        "final_avg_reward": -13129.917999999985,
+        "final_avg_travel_time": 1801.0,
+        "model_path": "/home/one/Project/LIRL/LIRL-CPS-main/CityFlow/outputs/scale_benchmark/scale_benchmark_20260113_211415/City_5_10/model.pt"
+      },
+      "timing": {
+        "scale_name": "City_5_10",
+        "num_intersections": 50,
+        "num_steps": 1000,
+        "device": "cuda",
+        "timing_stats": {
+          "nn_inference": {
+            "mean": 0.5379148675128818,
+            "std": 0.29232414583936484,
+            "min": 0.23808900732547045,
+            "max": 2.775387023575604,
+            "count": 1000
+          },
+          "discrete_mapping": {
+            "mean": 0.49804478418082,
+            "std": 0.09148895891057016,
+            "min": 0.2761511132121086,
+            "max": 1.5455234097316861,
+            "count": 1000
+          },
+          "continuous_mapping": {
+            "mean": 0.3551610589493066,
+            "std": 0.06751980611986727,
+            "min": 0.3197889309376478,
+            "max": 1.251557026989758,
+            "count": 1000
+          },
+          "projection": {
+            "mean": 1.2530249120900407,
+            "std": 0.22375067405254526,
+            "min": 0.8805330144241452,
+            "max": 3.70111595839262,
+            "count": 1000
+          },
+          "total_decision": {
+            "mean": 1.8100267456611618,
+            "std": 0.41284078580523764,
+            "min": 1.1702320771291852,
+            "max": 4.51788492500782,
+            "count": 1000
+          }
+        }
+      }
+    },
+    "City_10_10": {
+      "training": {
+        "scale_name": "City_10_10",
+        "num_intersections": 100,
+        "state_size": 700,
+        "action_size": 200,
+        "training_time": 3072.01828455925,
+        "final_avg_reward": 25876.706000000097,
+        "final_avg_travel_time": 1641.9654430555554,
+        "model_path": "/home/one/Project/LIRL/LIRL-CPS-main/CityFlow/outputs/scale_benchmark/scale_benchmark_20260113_211415/City_10_10/model.pt"
+      },
+      "timing": {
+        "scale_name": "City_10_10",
+        "num_intersections": 100,
+        "num_steps": 1000,
+        "device": "cuda",
+        "timing_stats": {
+          "nn_inference": {
+            "mean": 0.5695445373421535,
+            "std": 0.3205386838636365,
+            "min": 0.32023806124925613,
+            "max": 2.782922936603427,
+            "count": 1000
+          },
+          "discrete_mapping": {
+            "mean": 0.9871784357819706,
+            "std": 0.15043639403759113,
+            "min": 0.553870340809226,
+            "max": 2.706727827899158,
+            "count": 1000
+          },
+          "continuous_mapping": {
+            "mean": 0.6705485447309911,
+            "std": 0.09972488897598974,
+            "min": 0.6151788402348757,
+            "max": 2.1007154136896133,
+            "count": 1000
+          },
+          "projection": {
+            "mean": 2.383447629516013,
+            "std": 0.3579354758444788,
+            "min": 1.6685070004314184,
+            "max": 6.221148069016635,
+            "count": 1000
+          },
+          "total_decision": {
+            "mean": 3.0026132250204682,
+            "std": 0.5307979788726667,
+            "min": 2.0672560203820467,
+            "max": 7.2586809983477,
+            "count": 1000
+          }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,5 @@
+Metric,LIRL,PDQN,HPPO,LPPO,CPO
+Station Utilization (%),51.98,43.42,36.49,16.10,16.15
+Charging Success Rate (%),89.06,75.93,47.30,21.26,21.55
+Energy Delivered (kWh),11780.00,9638.75,6055.94,2624.89,2725.29
+Violation Rate (%),0.00,21.93,96.61,98.02,98.89

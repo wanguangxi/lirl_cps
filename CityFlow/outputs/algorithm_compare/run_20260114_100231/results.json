@@ -1,0 +1,63 @@
+{
+  "LIRL": {
+    "training": {
+      "episode_rewards": [
+        -2314.000000000003,
+        -83.0333333333331,
+        -15956.266666666672,
+        -18424.700000000026,
+        -16968.799999999996
+      ],
+      "episode_travel_times": [
+        1616.0880902777778,
+        1592.9215972222223,
+        1768.3428125,
+        1801.0,
+        1800.9467013888889
+      ],
+      "episode_throughputs": [
+        10134,
+        11357,
+        2719,
+        341,
+        696
+      ],
+      "episode_violations": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    "evaluation": {
+      "mean_reward": -7197.000000000044,
+      "std_reward": 0.0,
+      "mean_travel_time": 1676.2259375,
+      "std_travel_time": 0.0,
+      "mean_throughput": 11666.0,
+      "std_throughput": 0.0,
+      "mean_violations": 0.0,
+      "std_violations": 0.0,
+      "mean_violation_rate": 0.0,
+      "std_violation_rate": 0.0,
+      "all_rewards": [
+        -7197.000000000044,
+        -7197.000000000044
+      ],
+      "all_travel_times": [
+        1676.2259375,
+        1676.2259375
+      ],
+      "all_throughputs": [
+        11666,
+        11666
+      ],
+      "all_violations": [
+        0,
+        0
+      ]
+    },
+    "model_path": "/home/one/Project/LIRL/LIRL-CPS-main/CityFlow/outputs/algorithm_compare/run_20260114_100231/LIRL_model.pt"
+  }
+}

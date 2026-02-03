@@ -1,0 +1,4 @@
+Metric,Phase 1 (Mean),Phase 1 (Std),Phase 2 (Mean),Phase 2 (Std),Phase 3 (Mean),Phase 3 (Std)
+Charging Success Rate (%),85.5753,2.7262,86.3517,2.5351,86.7338,2.6120
+Energy Output (kWh),11980.0000,483.5086,11438.3333,579.4777,11635.8333,710.3799
+Constraint Violation Rate (%),0.0000,0.0000,0.0000,0.0000,0.0000,0.0000

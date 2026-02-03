@@ -1,0 +1,2 @@
+Scale,Intersections,StateDim,ActionDim,TrainTime(s),FinalReward,NNInference(ms),DiscreteMapping(ms),ContinuousMapping(ms),TotalDecision(ms)
+3x5 (15 intersections),15,105,30,78.5,-16960.1,0.9230,0.1648,0.1356,1.4255

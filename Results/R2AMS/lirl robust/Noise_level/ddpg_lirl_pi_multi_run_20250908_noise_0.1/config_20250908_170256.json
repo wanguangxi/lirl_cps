@@ -1,0 +1,42 @@
+{
+  "lr_mu": 0.0005,
+  "lr_q": 0.001,
+  "gamma": 0.98,
+  "batch_size": 128,
+  "buffer_limit": 1000000,
+  "tau": 0.005,
+  "num_of_jobs": 50,
+  "num_of_robots": 5,
+  "alpha": 0.5,
+  "beta": 0.5,
+  "num_of_episodes": 1000,
+  "hidden_dim1": 128,
+  "hidden_dim2": 64,
+  "critic_hidden": 32,
+  "memory_threshold": 500,
+  "training_iterations": 20,
+  "noise_params": {
+    "theta": 0.1,
+    "dt": 0.05,
+    "sigma": 0.1
+  },
+  "enable_multi_run": true,
+  "seeds": [
+    3047,
+    294,
+    714,
+    1092,
+    1386,
+    2856,
+    42,
+    114514,
+    2025,
+    1993
+  ],
+  "num_runs": 10,
+  "max_test_steps": 100,
+  "print_interval": 10,
+  "enable_gantt_plots": false,
+  "plot_training_curve": true,
+  "save_models": true
+}

@@ -1,0 +1,21 @@
+{
+  "experiment_info": {
+    "timestamp": "20260115_100648",
+    "train_episodes": 500,
+    "eval_episodes": 10
+  },
+  "comparison": {
+    "Dynamic green duration": {
+      "mean_throughput": 35460.0,
+      "std_throughput": 0.0,
+      "mean_travel_time": 1378.2010416666667,
+      "std_travel_time": 0.0
+    },
+    "Fixed green duration": {
+      "mean_throughput": 23672.0,
+      "std_throughput": 0.0,
+      "mean_travel_time": 1519.1340277777779,
+      "std_travel_time": 0.0
+    }
+  }
+}

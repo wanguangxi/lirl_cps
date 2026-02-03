@@ -1,0 +1,44 @@
+{
+  "timestamp": "20251218_233324",
+  "experiments": {
+    "small": {
+      "config": {
+        "num_of_jobs": 100,
+        "num_of_robots": 5
+      },
+      "training_time": 679.1913530826569,
+      "timing": {
+        "network_forward_ms": 0.4514530136089888,
+        "hungarian_ms": 0.003099916793871671,
+        "qp_ms": 0.3640244403970428,
+        "total_decision_ms": 1.4739657460086164
+      }
+    },
+    "medium": {
+      "config": {
+        "num_of_jobs": 100,
+        "num_of_robots": 50
+      },
+      "training_time": 918.8442883491516,
+      "timing": {
+        "network_forward_ms": 0.2928572992386762,
+        "hungarian_ms": 0.014618540815718006,
+        "qp_ms": 0.3582077563798521,
+        "total_decision_ms": 2.331651458320266
+      }
+    },
+    "large": {
+      "config": {
+        "num_of_jobs": 1000,
+        "num_of_robots": 100
+      },
+      "training_time": 27594.11576771736,
+      "timing": {
+        "network_forward_ms": 0.2963673478079727,
+        "hungarian_ms": 0.109917470200744,
+        "qp_ms": 0.35332820310519314,
+        "total_decision_ms": 7.4652137875952755
+      }
+    }
+  }
+}

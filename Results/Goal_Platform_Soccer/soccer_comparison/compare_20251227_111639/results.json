@@ -1,0 +1,72 @@
+{
+  "timestamp": "2025-12-27 18:29:33",
+  "episodes": 20000,
+  "seed": 3279,
+  "environment": "SoccerScoreGoal-v0",
+  "algorithms": {
+    "LIRL": {
+      "metrics": {
+        "mean_return": 5.993025776515125,
+        "std_return": 3.462978258769362,
+        "last_100_mean": 7.953565075927445,
+        "max_return": 10.041360077310136,
+        "min_return": -0.8814527988433838,
+        "goal_rate": 0.6205,
+        "last_100_goal_rate": 0.91,
+        "mean_timesteps": 129.1388,
+        "mean_timesteps_per_goal": 118.13416599516519
+      },
+      "training_time": 6539.111854314804,
+      "success": true,
+      "num_episodes": 20000
+    },
+    "PADDPG": {
+      "metrics": {
+        "mean_return": 4.157004223465342,
+        "std_return": 3.3253221556355013,
+        "last_100_mean": 6.553644796928447,
+        "max_return": 9.969462532673674,
+        "min_return": -0.8568921089172363,
+        "goal_rate": 0.3387,
+        "last_100_goal_rate": 0.67,
+        "mean_timesteps": 140.017,
+        "mean_timesteps_per_goal": 132.64895187481548
+      },
+      "training_time": 11638.976304769516,
+      "success": true,
+      "num_episodes": 20000
+    },
+    "PDQN": {
+      "metrics": {
+        "mean_return": 5.943999678854757,
+        "std_return": 3.389562882938488,
+        "last_100_mean": 7.559312528920275,
+        "max_return": 9.923652105594993,
+        "min_return": -0.9800465186900917,
+        "goal_rate": 0.602,
+        "last_100_goal_rate": 0.84,
+        "mean_timesteps": 131.65695,
+        "mean_timesteps_per_goal": 126.09003322259136
+      },
+      "training_time": 6387.208807706833,
+      "success": true,
+      "num_episodes": 20000
+    },
+    "QPAMDP": {
+      "metrics": {
+        "mean_return": 0.20263292620796275,
+        "std_return": 0.6730471059298325,
+        "last_100_mean": 0.6858830597742989,
+        "max_return": 8.86492028476093,
+        "min_return": -0.9228181838989258,
+        "goal_rate": 0,
+        "last_100_goal_rate": 0,
+        "mean_timesteps": 0,
+        "mean_timesteps_per_goal": 0
+      },
+      "training_time": 1403.7356264591217,
+      "success": true,
+      "num_episodes": 20025
+    }
+  }
+}

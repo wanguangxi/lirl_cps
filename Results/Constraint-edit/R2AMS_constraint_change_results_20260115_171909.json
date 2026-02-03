@@ -1,0 +1,41 @@
+{
+  "timestamp": "20260115_171909",
+  "config": {
+    "num_of_jobs": 100,
+    "num_of_robots": 50,
+    "disabled_robots": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5
+    ],
+    "training_episodes": 200
+  },
+  "phase1": {
+    "description": "\u6b63\u5e38\u51b3\u7b56\u6d4b\u8bd5\uff08\u65e0\u7ea6\u675f\uff09",
+    "avg_makespan": 129.97000000000003,
+    "avg_energy": 63659.293252628544
+  },
+  "phase2": {
+    "description": "\u7ea6\u675f\u6d4b\u8bd5\uff08\u673a\u5668\u4eba[0, 1, 2, 3, 4, 5]\u7981\u7528\uff09",
+    "avg_makespan": 147.38000000000002,
+    "avg_energy": 68011.79325262854,
+    "avg_violation_rate": 0.0,
+    "total_violations": 0
+  },
+  "phase3": {
+    "description": "\u91cd\u65b0\u8bad\u7ec3\u540e\u6d4b\u8bd5\uff08\u673a\u5668\u4eba[0, 1, 2, 3, 4, 5]\u7981\u7528\uff09",
+    "training_time": 165.14630937576294,
+    "best_avg_score": -24.21052139209776,
+    "avg_makespan": 141.60999999999996,
+    "avg_energy": 66569.29325262854,
+    "avg_violation_rate": 0.0
+  },
+  "comparison": {
+    "makespan_improvement_phase2_to_phase3": 3.9150495318225444,
+    "energy_improvement_phase2_to_phase3": 2.120955691672267,
+    "violation_reduction": 0.0
+  }
+}

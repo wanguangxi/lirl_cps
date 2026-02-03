@@ -1,0 +1,402 @@
+[
+  {
+    "job_id": 0,
+    "operation_id": 1,
+    "robot_id": 0,
+    "start_time": 5.015274620056152,
+    "end_time": 10.8658735871315,
+    "processing_time": 5.8505989670753475
+  },
+  {
+    "job_id": 0,
+    "operation_id": 4,
+    "robot_id": 0,
+    "start_time": 24.968118411302566,
+    "end_time": 31.83940675854683,
+    "processing_time": 6.871288347244263
+  },
+  {
+    "job_id": 1,
+    "operation_id": 4,
+    "robot_id": 0,
+    "start_time": 42.76043067276478,
+    "end_time": 49.35676212608814,
+    "processing_time": 6.596331453323364
+  },
+  {
+    "job_id": 2,
+    "operation_id": 4,
+    "robot_id": 0,
+    "start_time": 54.46830242723227,
+    "end_time": 59.388207755982876,
+    "processing_time": 4.919905328750611
+  },
+  {
+    "job_id": 3,
+    "operation_id": 4,
+    "robot_id": 0,
+    "start_time": 68.50270566940308,
+    "end_time": 73.85438442230226,
+    "processing_time": 5.35167875289917
+  },
+  {
+    "job_id": 4,
+    "operation_id": 4,
+    "robot_id": 0,
+    "start_time": 83.97106154412032,
+    "end_time": 89.56399362534285,
+    "processing_time": 5.592932081222534
+  },
+  {
+    "job_id": 5,
+    "operation_id": 4,
+    "robot_id": 0,
+    "start_time": 100.95592690110206,
+    "end_time": 107.0580190718174,
+    "processing_time": 6.102092170715332
+  },
+  {
+    "job_id": 6,
+    "operation_id": 4,
+    "robot_id": 0,
+    "start_time": 113.24141041487455,
+    "end_time": 117.54258462637662,
+    "processing_time": 4.301174211502075
+  },
+  {
+    "job_id": 7,
+    "operation_id": 4,
+    "robot_id": 0,
+    "start_time": 125.67613604664803,
+    "end_time": 130.08344140648842,
+    "processing_time": 4.407305359840393
+  },
+  {
+    "job_id": 8,
+    "operation_id": 4,
+    "robot_id": 0,
+    "start_time": 137.49028878733515,
+    "end_time": 141.20514755770563,
+    "processing_time": 3.7148587703704834
+  },
+  {
+    "job_id": 9,
+    "operation_id": 4,
+    "robot_id": 0,
+    "start_time": 145.45809102402998,
+    "end_time": 148.06348009305074,
+    "processing_time": 2.605389069020748
+  },
+  {
+    "job_id": 0,
+    "operation_id": 0,
+    "robot_id": 1,
+    "start_time": 0.0,
+    "end_time": 5.015274620056152,
+    "processing_time": 5.015274620056152
+  },
+  {
+    "job_id": 0,
+    "operation_id": 3,
+    "robot_id": 1,
+    "start_time": 17.85397197008133,
+    "end_time": 24.968118411302566,
+    "processing_time": 7.114146441221237
+  },
+  {
+    "job_id": 1,
+    "operation_id": 2,
+    "robot_id": 1,
+    "start_time": 28.765984439849852,
+    "end_time": 35.72378590106964,
+    "processing_time": 6.957801461219788
+  },
+  {
+    "job_id": 2,
+    "operation_id": 0,
+    "robot_id": 1,
+    "start_time": 35.72378590106964,
+    "end_time": 40.28870270252228,
+    "processing_time": 4.564916801452637
+  },
+  {
+    "job_id": 2,
+    "operation_id": 1,
+    "robot_id": 1,
+    "start_time": 40.28870270252228,
+    "end_time": 44.49987369477749,
+    "processing_time": 4.2111709922552105
+  },
+  {
+    "job_id": 2,
+    "operation_id": 3,
+    "robot_id": 1,
+    "start_time": 49.537418839335444,
+    "end_time": 54.46830242723227,
+    "processing_time": 4.930883587896824
+  },
+  {
+    "job_id": 3,
+    "operation_id": 2,
+    "robot_id": 1,
+    "start_time": 58.25877409875393,
+    "end_time": 63.320243147015574,
+    "processing_time": 5.0614690482616425
+  },
+  {
+    "job_id": 4,
+    "operation_id": 0,
+    "robot_id": 1,
+    "start_time": 63.320243147015574,
+    "end_time": 67.99823625385761,
+    "processing_time": 4.677993106842041
+  },
+  {
+    "job_id": 4,
+    "operation_id": 1,
+    "robot_id": 1,
+    "start_time": 67.99823625385761,
+    "end_time": 72.62524813115597,
+    "processing_time": 4.627011877298354
+  },
+  {
+    "job_id": 4,
+    "operation_id": 3,
+    "robot_id": 1,
+    "start_time": 78.41011219918728,
+    "end_time": 83.97106154412032,
+    "processing_time": 5.560949344933033
+  },
+  {
+    "job_id": 5,
+    "operation_id": 2,
+    "robot_id": 1,
+    "start_time": 88.32915769517422,
+    "end_time": 94.62275211513042,
+    "processing_time": 6.293594419956207
+  },
+  {
+    "job_id": 6,
+    "operation_id": 0,
+    "robot_id": 1,
+    "start_time": 94.62275211513042,
+    "end_time": 99.30912320315838,
+    "processing_time": 4.686371088027954
+  },
+  {
+    "job_id": 6,
+    "operation_id": 1,
+    "robot_id": 1,
+    "start_time": 99.30912320315838,
+    "end_time": 103.64015872478485,
+    "processing_time": 4.331035521626472
+  },
+  {
+    "job_id": 6,
+    "operation_id": 3,
+    "robot_id": 1,
+    "start_time": 108.82487909197808,
+    "end_time": 113.24141041487455,
+    "processing_time": 4.41653132289648
+  },
+  {
+    "job_id": 7,
+    "operation_id": 1,
+    "robot_id": 1,
+    "start_time": 113.27213222384454,
+    "end_time": 116.94866547882557,
+    "processing_time": 3.6765332549810408
+  },
+  {
+    "job_id": 7,
+    "operation_id": 3,
+    "robot_id": 1,
+    "start_time": 121.4010735243559,
+    "end_time": 125.67613604664803,
+    "processing_time": 4.275062522292137
+  },
+  {
+    "job_id": 8,
+    "operation_id": 1,
+    "robot_id": 1,
+    "start_time": 125.84096185863018,
+    "end_time": 129.49143364727496,
+    "processing_time": 3.650471788644791
+  },
+  {
+    "job_id": 8,
+    "operation_id": 3,
+    "robot_id": 1,
+    "start_time": 133.7623991638422,
+    "end_time": 137.49028878733515,
+    "processing_time": 3.727889623492956
+  },
+  {
+    "job_id": 9,
+    "operation_id": 1,
+    "robot_id": 1,
+    "start_time": 137.9823052316904,
+    "end_time": 140.3278320189565,
+    "processing_time": 2.3455267872661354
+  },
+  {
+    "job_id": 9,
+    "operation_id": 3,
+    "robot_id": 1,
+    "start_time": 143.1161016654223,
+    "end_time": 145.45809102402998,
+    "processing_time": 2.34198935860768
+  },
+  {
+    "job_id": 0,
+    "operation_id": 2,
+    "robot_id": 2,
+    "start_time": 10.8658735871315,
+    "end_time": 17.85397197008133,
+    "processing_time": 6.988098382949829
+  },
+  {
+    "job_id": 1,
+    "operation_id": 0,
+    "robot_id": 2,
+    "start_time": 17.85397197008133,
+    "end_time": 22.852427971363067,
+    "processing_time": 4.998456001281738
+  },
+  {
+    "job_id": 1,
+    "operation_id": 1,
+    "robot_id": 2,
+    "start_time": 22.852427971363067,
+    "end_time": 28.765984439849852,
+    "processing_time": 5.913556468486785
+  },
+  {
+    "job_id": 1,
+    "operation_id": 3,
+    "robot_id": 2,
+    "start_time": 35.72378590106964,
+    "end_time": 42.76043067276478,
+    "processing_time": 7.036644771695137
+  },
+  {
+    "job_id": 2,
+    "operation_id": 2,
+    "robot_id": 2,
+    "start_time": 44.49987369477749,
+    "end_time": 49.537418839335444,
+    "processing_time": 5.037545144557953
+  },
+  {
+    "job_id": 3,
+    "operation_id": 0,
+    "robot_id": 2,
+    "start_time": 49.537418839335444,
+    "end_time": 54.10247349441052,
+    "processing_time": 4.565054655075073
+  },
+  {
+    "job_id": 3,
+    "operation_id": 1,
+    "robot_id": 2,
+    "start_time": 54.10247349441052,
+    "end_time": 58.25877409875393,
+    "processing_time": 4.156300604343414
+  },
+  {
+    "job_id": 3,
+    "operation_id": 3,
+    "robot_id": 2,
+    "start_time": 63.320243147015574,
+    "end_time": 68.50270566940308,
+    "processing_time": 5.182462522387505
+  },
+  {
+    "job_id": 4,
+    "operation_id": 2,
+    "robot_id": 2,
+    "start_time": 72.62524813115597,
+    "end_time": 78.41011219918728,
+    "processing_time": 5.784864068031311
+  },
+  {
+    "job_id": 5,
+    "operation_id": 0,
+    "robot_id": 2,
+    "start_time": 78.41011219918728,
+    "end_time": 83.10590640008449,
+    "processing_time": 4.695794200897216
+  },
+  {
+    "job_id": 5,
+    "operation_id": 1,
+    "robot_id": 2,
+    "start_time": 83.10590640008449,
+    "end_time": 88.32915769517422,
+    "processing_time": 5.223251295089721
+  },
+  {
+    "job_id": 5,
+    "operation_id": 3,
+    "robot_id": 2,
+    "start_time": 94.62275211513042,
+    "end_time": 100.95592690110206,
+    "processing_time": 6.333174785971641
+  },
+  {
+    "job_id": 6,
+    "operation_id": 2,
+    "robot_id": 2,
+    "start_time": 103.64015872478485,
+    "end_time": 108.82487909197808,
+    "processing_time": 5.184720367193222
+  },
+  {
+    "job_id": 7,
+    "operation_id": 0,
+    "robot_id": 2,
+    "start_time": 108.82487909197808,
+    "end_time": 113.27213222384454,
+    "processing_time": 4.447253131866455
+  },
+  {
+    "job_id": 7,
+    "operation_id": 2,
+    "robot_id": 2,
+    "start_time": 116.94866547882557,
+    "end_time": 121.4010735243559,
+    "processing_time": 4.452408045530319
+  },
+  {
+    "job_id": 8,
+    "operation_id": 0,
+    "robot_id": 2,
+    "start_time": 121.4010735243559,
+    "end_time": 125.84096185863018,
+    "processing_time": 4.439888334274292
+  },
+  {
+    "job_id": 8,
+    "operation_id": 2,
+    "robot_id": 2,
+    "start_time": 129.49143364727496,
+    "end_time": 133.7623991638422,
+    "processing_time": 4.27096551656723
+  },
+  {
+    "job_id": 9,
+    "operation_id": 0,
+    "robot_id": 2,
+    "start_time": 133.7623991638422,
+    "end_time": 137.9823052316904,
+    "processing_time": 4.219906067848205
+  },
+  {
+    "job_id": 9,
+    "operation_id": 2,
+    "robot_id": 2,
+    "start_time": 140.3278320189565,
+    "end_time": 143.1161016654223,
+    "processing_time": 2.7882696464657784
+  }
+]

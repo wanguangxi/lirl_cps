@@ -1,0 +1,126 @@
+{
+  "timestamp": "2026-01-10 11:29:10",
+  "episodes": 50000,
+  "num_seeds": 1,
+  "seeds": [
+    0
+  ],
+  "algorithms": {
+    "LIRL": {
+      "aggregated_metrics": {
+        "mean_return": 16.51490367731043,
+        "std_return": 0.0,
+        "success_rate": 0.46026,
+        "success_rate_std": 0.0,
+        "last_100_mean": 34.18517930368844,
+        "last_100_std": 0.0,
+        "last_100_success_rate": 0.76,
+        "last_100_success_std": 0.0,
+        "num_seeds": 1
+      },
+      "mean_training_time": 5123.459438323975,
+      "std_training_time": 0.0,
+      "num_successful_seeds": 1,
+      "seed_metrics": [
+        {
+          "mean_return": 16.51490367731043,
+          "std_return": 31.254826694775428,
+          "success_rate": 0.46026,
+          "last_100_mean": 34.18517930368844,
+          "last_100_success_rate": 0.76,
+          "max_return": 50.0,
+          "min_return": -20.099194935852108,
+          "seed": 0,
+          "training_time": 5123.459438323975
+        }
+      ]
+    },
+    "PADDPG": {
+      "aggregated_metrics": {
+        "mean_return": -9.778317718657657,
+        "std_return": 0.0,
+        "success_rate": 0.00068,
+        "success_rate_std": 0.0,
+        "last_100_mean": -10.016225346113282,
+        "last_100_std": 0.0,
+        "last_100_success_rate": 0.0,
+        "last_100_success_std": 0.0,
+        "num_seeds": 1
+      },
+      "mean_training_time": 2430.5690262317657,
+      "std_training_time": 0.0,
+      "num_successful_seeds": 1,
+      "seed_metrics": [
+        {
+          "mean_return": -9.778317718657657,
+          "std_return": 3.161372640870119,
+          "success_rate": 0.00068,
+          "last_100_mean": -10.016225346113282,
+          "last_100_success_rate": 0.0,
+          "max_return": 50.0,
+          "min_return": -20.10064759234107,
+          "seed": 0,
+          "training_time": 2430.5690262317657
+        }
+      ]
+    },
+    "PDQN": {
+      "aggregated_metrics": {
+        "mean_return": 26.360902041286085,
+        "std_return": 0.0,
+        "success_rate": 0.59188,
+        "success_rate_std": 0.0,
+        "last_100_mean": 25.2081151991055,
+        "last_100_std": 0.0,
+        "last_100_success_rate": 0.57,
+        "last_100_success_std": 0.0,
+        "num_seeds": 1
+      },
+      "mean_training_time": 3311.4946467876434,
+      "std_training_time": 0.0,
+      "num_successful_seeds": 1,
+      "seed_metrics": [
+        {
+          "mean_return": 26.360902041286085,
+          "std_return": 28.535871441637113,
+          "success_rate": 0.59188,
+          "last_100_mean": 25.2081151991055,
+          "last_100_success_rate": 0.57,
+          "max_return": 50.0,
+          "min_return": -20.062626945239128,
+          "seed": 0,
+          "training_time": 3311.4946467876434
+        }
+      ]
+    },
+    "QPAMDP": {
+      "aggregated_metrics": {
+        "mean_return": 14.127192157090958,
+        "std_return": 0.0,
+        "success_rate": 0.37232767232767233,
+        "success_rate_std": 0.0,
+        "last_100_mean": 14.234175447297284,
+        "last_100_std": 0.0,
+        "last_100_success_rate": 0.37,
+        "last_100_success_std": 0.0,
+        "num_seeds": 1
+      },
+      "mean_training_time": 266.47156596183777,
+      "std_training_time": 0.0,
+      "num_successful_seeds": 1,
+      "seed_metrics": [
+        {
+          "mean_return": 14.127192157090958,
+          "std_return": 27.69769618923427,
+          "success_rate": 0.37232767232767233,
+          "last_100_mean": 14.234175447297284,
+          "last_100_success_rate": 0.37,
+          "max_return": 50.0,
+          "min_return": -16.409789722857564,
+          "seed": 0,
+          "training_time": 266.47156596183777
+        }
+      ]
+    }
+  }
+}
