@@ -3,12 +3,6 @@
 """
 LIRL Constraint Change Experiment
 =================================
-实验目的：测试LIRL算法在约束变化情况下的适应能力
-
-实验分三个阶段：
-1) 阶段一：加载已训练模型，正常决策测试
-2) 阶段二：增加约束（机器人0-5禁用），测试约束违反率
-3) 阶段三：在新约束下重新训练模型，收敛后测试
 """
 
 import random
@@ -28,7 +22,6 @@ import json
 import matplotlib.pyplot as plt
 from scipy.optimize import linear_sum_assignment, minimize
 
-# 添加环境路径
 sys.path.append(os.path.join(os.path.dirname(__file__), '../env'))
 try:
     import importlib
@@ -39,12 +32,12 @@ except Exception:
     from env import env as ENV
 
 # =======================
-# GPU设备配置
+# GPU Device Configuration
 # =======================
 DEVICE = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 def print_gpu_info():
-    """打印GPU信息"""
+    """Print GPU information"""
     if torch.cuda.is_available():
         print(f"GPU Available: {torch.cuda.get_device_name(0)}")
         print(f"GPU Memory: {torch.cuda.get_device_properties(0).total_memory / 1e9:.2f} GB")
@@ -52,37 +45,37 @@ def print_gpu_info():
         print("GPU not available, using CPU")
 
 # =======================
-# 实验配置
+# Experiment Configuration
 # =======================
 CONFIG = {
-    # Environment parameters (与medium scale一致)
+    # Environment parameters (consistent with medium scale)
     'num_of_jobs': 100,
     'num_of_robots': 50,
     'alpha': 0.5,
     'beta': 0.5,
     
     # Constraint parameters
-    'disabled_robots': [0, 1, 2, 3, 4, 5],  # 禁用的机器人ID列表
+    'disabled_robots': [0, 1, 2, 3, 4, 5],
     
     # Network architecture
     'hidden_dim1': 128,
     'hidden_dim2': 64,
     'critic_hidden': 32,
     
-    # Training parameters (阶段三) - 微调预训练模型
-    'lr_mu': 0.00005,     # 极小学习率，保护预训练模型
-    'lr_q': 0.0001,       # 极小Critic学习率
+    # Training parameters (Phase 3) - fine-tune pretrained model
+    'lr_mu': 0.00005,
+    'lr_q': 0.0001,
     'gamma': 0.98,
     'batch_size': 128,
     'buffer_limit': 1000000,
-    'tau': 0.001,         # 极慢目标网络更新
+    'tau': 0.001,
     'memory_threshold': 500,
-    'training_iterations': 5,   # 减少训练迭代
-    'num_of_episodes': 200,     # 微调不需要太多episode
+    'training_iterations': 5,
+    'num_of_episodes': 200,
     'noise_params': {'theta': 0.1, 'dt': 0.05, 'sigma': 0.1},
-    'noise_scale': 0.1,         # 极小噪声，保护策略
-    'train_from_scratch': False, # 微调预训练模型
-    'violation_penalty': 0.0,   # 不添加额外惩罚，让投影处理约束
+    'noise_scale': 0.1,
+    'train_from_scratch': False,
+    'violation_penalty': 0.0,
     
     # Test parameters
     'max_test_steps': 1000,
@@ -98,12 +91,12 @@ CONFIG = {
 
 
 # =======================
-# 支持禁用机器人的环境包装类
+# Environment wrapper class supporting disabled robots
 # =======================
 class ConstrainedEnv:
-    """包装原始环境，支持禁用机器人约束
+    """Wrapper for original environment, supporting disabled robot constraints
     
-    禁用的机器人不参与时间线计算，确保调度能够正常进行
+    Disabled robots do not participate in timeline calculation, ensuring scheduling can proceed normally
     """
     def __init__(self, num_of_jobs, num_of_robots, alpha, beta, disabled_robots=None):
         self.base_env = ENV.Env(num_of_jobs, num_of_robots, alpha, beta)
@@ -111,11 +104,10 @@ class ConstrainedEnv:
         self.num_of_jobs = num_of_jobs
         self.num_of_robots = num_of_robots
         
-        # 代理常用属性
         self._sync_from_base()
     
     def _sync_from_base(self):
-        """从基础环境同步属性"""
+        """Sync attributes from base environment"""
         self.task_set = self.base_env.task_set
         self.task_state = self.base_env.task_state
         self.robot_state = self.base_env.robot_state
@@ -130,20 +122,20 @@ class ConstrainedEnv:
         self.task_prcoessing_time_state = self.base_env.task_prcoessing_time_state
     
     def _get_active_timelines(self):
-        """获取非禁用机器人的时间线列表"""
+        """Get timeline list of non-disabled robots"""
         return [self.base_env.robot_timeline[i] 
                 for i in range(self.num_of_robots) 
                 if i not in self.disabled_robots]
     
     def _update_times_excluding_disabled(self):
-        """更新current_time和future_time，排除禁用机器人"""
+        """Update current_time and future_time, excluding disabled robots"""
         active = self._get_active_timelines()
         if active:
             self.base_env.current_time = np.min(active)
             self.base_env.future_time = np.max(active)
     
     def _update_robot_availability(self):
-        """更新机器人可用状态，禁用机器人始终不可用"""
+        """Update robot availability status, disabled robots are always unavailable"""
         for robot_id in range(self.num_of_robots):
             if robot_id in self.disabled_robots:
                 self.base_env.robot_state[robot_id] = 0
@@ -153,7 +145,7 @@ class ConstrainedEnv:
                 self.base_env.robot_state[robot_id] = 0
     
     def _rebuild_state(self):
-        """重建状态向量"""
+        """Rebuild state vector"""
         self.base_env.state = np.concatenate((
             self.base_env.task_state,
             self.base_env.robot_state,
@@ -163,40 +155,35 @@ class ConstrainedEnv:
         self._sync_from_base()
     
     def _update_disabled_robot_timelines(self):
-        """将禁用机器人的时间线设为所有机器人时间线中的最大值"""
-        # 获取非禁用机器人的最大时间线
+        """Set disabled robot timelines to the maximum of all robot timelines"""
         active_timelines = self._get_active_timelines()
         if active_timelines:
             max_timeline = np.max(active_timelines)
         else:
             max_timeline = 0.0
         
-        # 设置禁用机器人的时间线为最大值
         for robot_id in self.disabled_robots:
             if robot_id < self.num_of_robots:
                 self.base_env.robot_timeline[robot_id] = max_timeline
     
     def reset(self):
-        """重置环境"""
+        """Reset environment"""
         self.base_env.reset()
         
-        # 设置禁用机器人：不可用 + 时间线为最大时间线
         for robot_id in self.disabled_robots:
             if robot_id < self.num_of_robots:
                 self.base_env.robot_state[robot_id] = 0
         
-        # 初始时所有时间线都是0，禁用机器人也设为0
         self._update_disabled_robot_timelines()
         self._rebuild_state()
         return self.state
     
     def step(self, action):
-        """执行动作"""
+        """Execute action"""
         robot_id = round(action[1])
         if robot_id >= self.num_of_robots:
             robot_id = self.num_of_robots - 1
         
-        # 选择禁用机器人时返回惩罚
         if robot_id in self.disabled_robots:
             self.base_env.reward = -1
             self.base_env.last_action_state[0] = 0
@@ -204,12 +191,9 @@ class ConstrainedEnv:
             self._rebuild_state()
             return self.state, -1, self.done
         
-        # 执行基础环境的step
         state, reward, done = self.base_env.step(action)
         
-        # 更新禁用机器人时间线为当前最大时间线
         self._update_disabled_robot_timelines()
-        # 修正时间计算
         self._update_times_excluding_disabled()
         self._update_robot_availability()
         self._rebuild_state()
@@ -217,15 +201,15 @@ class ConstrainedEnv:
         return self.state, self.reward, self.done
     
     def calculate_robot_idle_times(self, reference_time=None):
-        """计算空闲时间（代理到基础环境）"""
+        """Calculate idle time (proxy to base environment)"""
         return self.base_env.calculate_robot_idle_times(reference_time)
 
 
 # =======================
-# 神经网络定义
+# Neural Network Definitions
 # =======================
 class MuNet(nn.Module):
-    """Actor网络"""
+    """Actor network"""
     def __init__(self, state_size, action_size, config=None):
         super(MuNet, self).__init__()
         if config is None:
@@ -243,7 +227,7 @@ class MuNet(nn.Module):
 
 
 class QNet(nn.Module):
-    """Critic网络"""
+    """Critic network"""
     def __init__(self, state_size, action_size, config=None):
         super(QNet, self).__init__()
         if config is None:
@@ -263,7 +247,7 @@ class QNet(nn.Module):
 
 
 class ReplayBuffer:
-    """经验回放缓冲区"""
+    """Experience replay buffer"""
     def __init__(self, buffer_limit=None, device=None):
         if buffer_limit is None:
             buffer_limit = CONFIG['buffer_limit']
@@ -311,38 +295,34 @@ class OrnsteinUhlenbeckNoise:
 
 
 # =======================
-# 约束感知的动作投影器
+# Constraint-aware action projector
 # =======================
 class ConstraintAwareActionProjector:
-    """约束感知的动作投影器 - 支持机器人禁用约束"""
+    """Constraint-aware action projector - supports robot disable constraints"""
     
     def __init__(self, config=None, disabled_robots=None):
         self.config = config if config else CONFIG
         self.disabled_robots = set(disabled_robots) if disabled_robots else set()
         
-        # 统计约束违反
-        self.constraint_violations = 0  # 机器人约束违反次数
-        self.job_violations = 0  # 选择已完成作业的次数
+        self.constraint_violations = 0
+        self.job_violations = 0
         self.total_actions = 0
     
     def reset_statistics(self):
-        """重置统计数据"""
+        """Reset statistics"""
         self.constraint_violations = 0
         self.job_violations = 0
         self.total_actions = 0
     
     def get_valid_jobs_and_robots(self, env):
-        """获取有效的作业和机器人（考虑禁用约束）"""
-        # 获取环境中可用的机器人
+        """Get valid jobs and robots (considering disable constraints)"""
         if hasattr(env, 'robot_state') and isinstance(env.robot_state, np.ndarray):
             env_available = np.where(env.robot_state == 1)[0].tolist()
         else:
             env_available = [i for i, state in enumerate(env.robot_state) if state == 1]
         
-        # 排除禁用的机器人
         valid_robots = [r for r in env_available if r not in self.disabled_robots]
         
-        # 获取未完成的作业
         valid_jobs = []
         if hasattr(env, 'task_state') and hasattr(env, 'num_of_jobs'):
             task_state = env.task_state
@@ -364,17 +344,17 @@ class ConstraintAwareActionProjector:
     
     def project(self, env, a, check_violation=True):
         """
-        执行动作投影（考虑机器人禁用约束）
+        Execute action projection (considering robot disable constraints)
         
-        投影过程：
-        1. 检查网络输出是否尝试选择禁用的机器人（记录约束违反）
-        2. 从有效机器人集合中选择（排除禁用机器人和环境中不可用的机器人）
-        3. 考虑任务-机器人兼容性（available_modules）
+        Projection process:
+        1. Check if network output attempts to select disabled robot (record constraint violation)
+        2. Select from valid robot set (exclude disabled robots and unavailable robots in environment)
+        3. Consider task-robot compatibility (available_modules)
         
         Args:
-            env: 环境对象
-            a: 动作向量 (torch.Tensor)
-            check_violation: 是否检查约束违反
+            env: Environment object
+            a: Action vector (torch.Tensor)
+            check_violation: Whether to check constraint violation
         
         Returns:
             [job_id, robot_id, param], was_violated
@@ -387,34 +367,26 @@ class ConstraintAwareActionProjector:
         self.total_actions += 1
         was_violated = False
         
-        # 获取有效作业和机器人（已排除禁用的机器人和已完成的作业）
         valid_jobs, valid_robots = self.get_valid_jobs_and_robots(env)
         
         num_jobs = len(env.task_set)
         num_robots = len(env.robot_state)
         
-        # 边界情况：所有作业已完成或无可用机器人
         if len(valid_jobs) == 0 or len(valid_robots) == 0:
-            # 找一个任意有效的作业和机器人（用于返回，但环境会处理done状态）
-            # 不应该发送已完成的作业，返回-1表示无效动作
             return [-1, -1, 0.0], False
         
         job_preference = a_[0]
         robot_preference = a_[1]
         
-        # ====== 作业选择（从有效作业中选择，确保有未完成的操作）======
         target_job = int(job_preference * num_jobs)
         
-        # 从有效作业中找到有未完成操作的作业
         job_id = None
         current_op_idx = None
         
-        # 按偏好排序有效作业
         sorted_valid_jobs = sorted(valid_jobs, key=lambda x: abs(x - target_job))
         
         for candidate_job in sorted_valid_jobs:
             operations = env.task_set[candidate_job]
-            # 查找该作业的第一个未完成操作
             for op_idx, task in enumerate(operations):
                 if not task.state:
                     job_id = candidate_job
@@ -423,61 +395,47 @@ class ConstraintAwareActionProjector:
             if job_id is not None:
                 break
         
-        # 如果没有找到有效的作业（理论上不应该发生）
         if job_id is None:
             return [-1, -1, 0.0], False
         
-        # 获取当前待执行的任务
         operations = env.task_set[job_id]
         current_task = operations[current_op_idx]
         
-        # ====== 机器人选择（考虑约束和兼容性）======
-        # 获取任务支持的机器人列表
         task_compatible_robots = set(getattr(current_task, 'available_modules', range(num_robots)))
         
-        # 从有效机器人中筛选出同时满足：
-        # 1. 环境可用（robot_state == 1）
-        # 2. 未被禁用（不在disabled_robots中）- 已在valid_robots中处理
-        # 3. 任务兼容（在available_modules中）
         compatible_valid_robots = [r for r in valid_robots if r in task_compatible_robots]
         
-        # 如果没有同时满足约束和兼容性的机器人，退而求其次使用有效机器人
         if len(compatible_valid_robots) == 0:
             compatible_valid_robots = valid_robots
         
-        # 从兼容的有效机器人中选择最接近偏好的
         target_robot = int(robot_preference * num_robots)
         robot_id = min(compatible_valid_robots, key=lambda x: abs(x - target_robot))
         
-        # ====== 连续参数 ======
         param = float(np.clip(a_[2] if len(a_) > 2 else 0.0, 0.0, 1.0))
         
-        # ====== 最终动作的约束违反检测 ======
         if check_violation:
-            # 检查最终选择的机器人是否在禁用列表中
             if robot_id in self.disabled_robots:
                 was_violated = True
                 self.constraint_violations += 1
-            # 检查最终选择的作业是否已完成
             if job_id not in valid_jobs:
                 self.job_violations += 1
         
         return [job_id, robot_id, param], was_violated
     
     def get_violation_rate(self):
-        """获取机器人约束违反率"""
+        """Get robot constraint violation rate"""
         if self.total_actions == 0:
             return 0.0
         return self.constraint_violations / self.total_actions
     
     def get_job_violation_rate(self):
-        """获取作业违反率（选择已完成作业的比例）"""
+        """Get job violation rate (proportion of selecting completed jobs)"""
         if self.total_actions == 0:
             return 0.0
         return self.job_violations / self.total_actions
     
     def get_statistics(self):
-        """获取所有统计数据"""
+        """Get all statistics"""
         return {
             'total_actions': self.total_actions,
             'robot_constraint_violations': self.constraint_violations,
@@ -488,70 +446,62 @@ class ConstraintAwareActionProjector:
 
 
 # =======================
-# 能耗计算函数
+# Energy calculation function
 # =======================
 def calculate_total_energy(env):
-    """计算调度方案的总能耗"""
+    """Calculate total energy consumption of scheduling solution"""
     total_energy = 0.0
     
-    # 计算所有已完成任务的能耗
     for job_id in range(env.num_of_jobs):
         operations = env.task_set[job_id]
         for task in operations:
-            if task.state:  # 任务已完成
-                # 使用能量模型计算
+            if task.state:
                 try:
                     import energy_model as EM
                     energy = EM.energy_dynamic(task.target_position, task.mass, task.processing_time)
                     total_energy += energy
                 except:
-                    # 如果能量模型不可用，使用简化估算
-                    total_energy += task.processing_time * 10  # 假设每时间单位10能量
+                    total_energy += task.processing_time * 10
     
-    # 加上空闲能耗
     idle_stats = env.calculate_robot_idle_times(env.future_time)
-    idle_energy = idle_stats['summary']['total_idle_time'] * 5.0  # 空闲能耗率5
+    idle_energy = idle_stats['summary']['total_idle_time'] * 5.0
     total_energy += idle_energy
     
     return total_energy
 
 
 # =======================
-# 阶段一：加载模型并测试
+# Phase 1: Load model and test
 # =======================
 def phase1_test_pretrained_model(config):
-    """阶段一：加载已训练模型，正常决策测试"""
+    """Phase 1: Load trained model, normal decision testing"""
     print("\n" + "="*80)
-    print("阶段一：加载已训练模型进行正常决策测试")
+    print("Phase 1: Load trained model for normal decision testing")
     print("="*80)
     
     device = DEVICE
     
-    # 创建环境
     env = ENV.Env(config['num_of_jobs'], config['num_of_robots'], 
                   config['alpha'], config['beta'])
     state_size = len(env.state)
     action_size = len(env.action)
     
-    print(f"环境配置: Jobs={config['num_of_jobs']}, Robots={config['num_of_robots']}")
-    print(f"状态维度: {state_size}, 动作维度: {action_size}")
+    print(f"Environment config: Jobs={config['num_of_jobs']}, Robots={config['num_of_robots']}")
+    print(f"State dimension: {state_size}, Action dimension: {action_size}")
     
-    # 加载模型
     mu = MuNet(state_size, action_size, config).to(device)
     model_path = os.path.join(config['pretrained_model_path'], 'mu.pth')
     
     if os.path.exists(model_path):
         mu.load_state_dict(torch.load(model_path, map_location=device))
         mu.eval()
-        print(f"成功加载模型: {model_path}")
+        print(f"Successfully loaded model: {model_path}")
     else:
-        print(f"错误: 模型文件不存在 {model_path}")
+        print(f"Error: Model file does not exist {model_path}")
         return None
     
-    # 创建动作投影器（无约束）
     action_projector = ConstraintAwareActionProjector(config, disabled_robots=None)
     
-    # 测试多个episode
     results = []
     
     for ep in range(config['num_test_episodes']):
@@ -580,7 +530,6 @@ def phase1_test_pretrained_model(config):
             s = s_prime
             step += 1
         
-        # 计算结果
         makespan = env.future_time
         total_energy = calculate_total_energy(env)
         
@@ -594,17 +543,16 @@ def phase1_test_pretrained_model(config):
         
         print(f"  Episode {ep+1}: Makespan={makespan:.2f}, Energy={total_energy:.2f}, Steps={step}")
     
-    # 汇总结果
     avg_makespan = np.mean([r['makespan'] for r in results])
     avg_energy = np.mean([r['total_energy'] for r in results])
     
-    print(f"\n阶段一结果汇总:")
-    print(f"  平均完工时间 (Makespan): {avg_makespan:.2f}")
-    print(f"  平均总能耗 (Energy): {avg_energy:.2f}")
+    print(f"\nPhase 1 Results Summary:")
+    print(f"  Average Makespan: {avg_makespan:.2f}")
+    print(f"  Average Total Energy: {avg_energy:.2f}")
     
     return {
         'phase': 1,
-        'description': '正常决策测试（无约束）',
+        'description': 'Normal decision testing (no constraints)',
         'avg_makespan': avg_makespan,
         'avg_energy': avg_energy,
         'details': results
@@ -612,41 +560,37 @@ def phase1_test_pretrained_model(config):
 
 
 # =======================
-# 阶段二：带约束测试
+# Phase 2: Test with constraints
 # =======================
 def phase2_test_with_constraints(config):
-    """阶段二：增加约束（机器人0-5禁用），测试约束违反率"""
+    """Phase 2: Add constraints (robots 0-5 disabled), test constraint violation rate"""
     print("\n" + "="*80)
-    print("阶段二：增加约束测试（机器人0-5禁用）")
+    print("Phase 2: Constraint testing (robots 0-5 disabled)")
     print("="*80)
     
     device = DEVICE
     disabled_robots = config['disabled_robots']
-    print(f"禁用机器人: {disabled_robots}")
+    print(f"Disabled robots: {disabled_robots}")
     
-    # 创建带约束的环境（禁用机器人不参与时间线计算）
     env = ConstrainedEnv(config['num_of_jobs'], config['num_of_robots'], 
                          config['alpha'], config['beta'],
                          disabled_robots=disabled_robots)
     state_size = len(env.state)
     action_size = len(env.action)
     
-    # 加载模型
     mu = MuNet(state_size, action_size, config).to(device)
     model_path = os.path.join(config['pretrained_model_path'], 'mu.pth')
     
     if os.path.exists(model_path):
         mu.load_state_dict(torch.load(model_path, map_location=device))
         mu.eval()
-        print(f"成功加载模型: {model_path}")
+        print(f"Successfully loaded model: {model_path}")
     else:
-        print(f"错误: 模型文件不存在 {model_path}")
+        print(f"Error: Model file does not exist {model_path}")
         return None
     
-    # 创建约束感知的动作投影器
     action_projector = ConstraintAwareActionProjector(config, disabled_robots=disabled_robots)
     
-    # 测试多个episode
     results = []
     
     for ep in range(config['num_test_episodes']):
@@ -669,14 +613,11 @@ def phase2_test_with_constraints(config):
             
             action, was_violated = action_projector.project(env, a, check_violation=True)
             
-            # 检查是否有效动作（-1表示无有效作业/机器人）
             if action[0] == -1:
-                # 所有作业已完成或无可用机器人
                 break
             
             s_prime, reward, done = env.step(action)
             
-            # 统计实际执行时的约束违反（环境返回负奖励表示违反）
             if reward == -1:
                 violation_count += 1
             
@@ -684,10 +625,8 @@ def phase2_test_with_constraints(config):
             s = s_prime
             step += 1
         
-        # 计算结果
         makespan = env.future_time
         total_energy = calculate_total_energy(env)
-        # 基于实际执行的约束违反率
         violation_rate = violation_count / step if step > 0 else 0.0
         
         results.append({
@@ -703,21 +642,20 @@ def phase2_test_with_constraints(config):
         print(f"  Episode {ep+1}: Makespan={makespan:.2f}, Energy={total_energy:.2f}, "
               f"Violations={violation_count}, ViolationRate={violation_rate*100:.1f}%")
     
-    # 汇总结果
     avg_makespan = np.mean([r['makespan'] for r in results])
     avg_energy = np.mean([r['total_energy'] for r in results])
     avg_violation_rate = np.mean([r['violation_rate'] for r in results])
     total_violations = sum([r['violations'] for r in results])
     
-    print(f"\n阶段二结果汇总:")
-    print(f"  平均完工时间 (Makespan): {avg_makespan:.2f}")
-    print(f"  平均总能耗 (Energy): {avg_energy:.2f}")
-    print(f"  平均约束违反率: {avg_violation_rate*100:.2f}%")
-    print(f"  总约束违反次数: {total_violations}")
+    print(f"\nPhase 2 Results Summary:")
+    print(f"  Average Makespan: {avg_makespan:.2f}")
+    print(f"  Average Total Energy: {avg_energy:.2f}")
+    print(f"  Average Constraint Violation Rate: {avg_violation_rate*100:.2f}%")
+    print(f"  Total Constraint Violations: {total_violations}")
     
     return {
         'phase': 2,
-        'description': f'约束测试（机器人{disabled_robots}禁用）',
+        'description': f'Constraint testing (robots {disabled_robots} disabled)',
         'disabled_robots': disabled_robots,
         'avg_makespan': avg_makespan,
         'avg_energy': avg_energy,
@@ -728,10 +666,10 @@ def phase2_test_with_constraints(config):
 
 
 # =======================
-# 阶段三：重新训练并测试
+# Phase 3: Retrain and test
 # =======================
 def train_step(mu, mu_target, q, q_target, memory, q_optimizer, mu_optimizer, config, device):
-    """单步训练"""
+    """Single training step"""
     s, a, r, s_prime, done_mask = memory.sample(config['batch_size'])
     
     with torch.no_grad():
@@ -758,36 +696,33 @@ def train_step(mu, mu_target, q, q_target, memory, q_optimizer, mu_optimizer, co
 
 
 def soft_update(net, net_target, tau):
-    """软更新目标网络"""
+    """Soft update target network"""
     for param_target, param in zip(net_target.parameters(), net.parameters()):
         param_target.data.copy_(param_target.data * (1.0 - tau) + param.data * tau)
 
 
 def phase3_retrain_and_test(config):
-    """阶段三：在新约束下重新训练模型，收敛后测试"""
+    """Phase 3: Retrain model under new constraints, test after convergence"""
     print("\n" + "="*80)
-    print("阶段三：在新约束下重新训练模型")
+    print("Phase 3: Retrain model under new constraints")
     print("="*80)
     
     device = DEVICE
     disabled_robots = config['disabled_robots']
-    print(f"禁用机器人: {disabled_robots}")
-    print(f"训练episodes: {config['num_of_episodes']}")
+    print(f"Disabled robots: {disabled_robots}")
+    print(f"Training episodes: {config['num_of_episodes']}")
     
-    # 创建带约束的环境（禁用机器人不参与时间线计算）
     env = ConstrainedEnv(config['num_of_jobs'], config['num_of_robots'], 
                          config['alpha'], config['beta'],
                          disabled_robots=disabled_robots)
     state_size = len(env.state)
     action_size = len(env.action)
     
-    # 初始化网络（从预训练模型加载）
     mu = MuNet(state_size, action_size, config).to(device)
     mu_target = MuNet(state_size, action_size, config).to(device)
     q = QNet(state_size, action_size, config).to(device)
     q_target = QNet(state_size, action_size, config).to(device)
     
-    # 根据配置决定是否加载预训练模型
     if not config.get('train_from_scratch', False):
         model_path = os.path.join(config['pretrained_model_path'], 'mu.pth')
         q_path = os.path.join(config['pretrained_model_path'], 'q.pth')
@@ -795,34 +730,30 @@ def phase3_retrain_and_test(config):
         if os.path.exists(model_path):
             mu.load_state_dict(torch.load(model_path, map_location=device))
             mu_target.load_state_dict(mu.state_dict())
-            print(f"从预训练模型初始化Actor: {model_path}")
+            print(f"Initialize Actor from pretrained model: {model_path}")
         
         if os.path.exists(q_path):
             q.load_state_dict(torch.load(q_path, map_location=device))
             q_target.load_state_dict(q.state_dict())
-            print(f"从预训练模型初始化Critic: {q_path}")
+            print(f"Initialize Critic from pretrained model: {q_path}")
     else:
-        print("从头训练模型（不加载预训练权重）")
+        print("Training from scratch (not loading pretrained weights)")
         mu_target.load_state_dict(mu.state_dict())
         q_target.load_state_dict(q.state_dict())
     
-    # 优化器
     mu_optimizer = optim.Adam(mu.parameters(), lr=config['lr_mu'])
     q_optimizer = optim.Adam(q.parameters(), lr=config['lr_q'])
     
-    # 训练组件
     memory = ReplayBuffer(config['buffer_limit'], device=device)
     ou_noise = OrnsteinUhlenbeckNoise(mu=np.zeros(action_size), config=config)
     action_projector = ConstraintAwareActionProjector(config, disabled_robots=disabled_robots)
     
-    # 预分配GPU张量
     s_buffer = torch.zeros(state_size, dtype=torch.float32, device=device)
     
-    # 训练记录
     score_record = []
     best_avg_score = float('-inf')
     
-    print(f"\n开始训练...")
+    print(f"\nStarting training...")
     training_start = time.time()
     
     for n_epi in range(config['num_of_episodes']):
@@ -836,28 +767,23 @@ def phase3_retrain_and_test(config):
                 s_buffer.copy_(torch.from_numpy(s.astype(np.float32)))
                 a = mu(s_buffer.unsqueeze(0)).squeeze(0)
                 
-                # 添加探索噪声（使用配置的噪声比例）
                 noise = ou_noise()
                 noise_scale = config.get('noise_scale', 0.2)
                 a_np = a.cpu().numpy() + noise * noise_scale
                 a_np = np.clip(a_np, 0, 1)
             
-            # 动作投影（约束感知）
             a_tensor = torch.from_numpy(a_np.astype(np.float32)).to(device)
             action, was_violated = action_projector.project(env, a_tensor, check_violation=True)
             
-            # 检查是否有效动作
             if action[0] == -1:
                 break
             
             s_prime, r, done = env.step(action)
             
-            # 如果网络输出被投影修正，可选添加惩罚
             violation_penalty = config.get('violation_penalty', 0.0)
             if was_violated and violation_penalty > 0:
                 r = r - violation_penalty
             
-            # 存储网络输出动作
             memory.put((s, a_np, r, s_prime, done))
             s = s_prime
             episode_reward += r
@@ -865,14 +791,12 @@ def phase3_retrain_and_test(config):
         
         score_record.append(episode_reward)
         
-        # 训练更新
         if memory.size() > config['memory_threshold']:
             for _ in range(config['training_iterations']):
                 train_step(mu, mu_target, q, q_target, memory, q_optimizer, mu_optimizer, config, device)
                 soft_update(mu, mu_target, config['tau'])
                 soft_update(q, q_target, config['tau'])
         
-        # 打印进度
         if n_epi % config['print_interval'] == 0 and n_epi != 0:
             avg_score = np.mean(score_record[-config['print_interval']:])
             elapsed = time.time() - training_start
@@ -882,11 +806,10 @@ def phase3_retrain_and_test(config):
                 best_avg_score = avg_score
     
     training_time = time.time() - training_start
-    print(f"\n训练完成! 用时: {training_time:.2f}s")
-    print(f"最佳平均分数: {best_avg_score:.4f}")
+    print(f"\nTraining completed! Time: {training_time:.2f}s")
+    print(f"Best average score: {best_avg_score:.4f}")
     
-    # 测试重新训练后的模型
-    print(f"\n测试重新训练后的模型...")
+    print(f"\nTesting retrained model...")
     mu.eval()
     
     results = []
@@ -910,13 +833,11 @@ def phase3_retrain_and_test(config):
             
             action, was_violated = action_projector.project(env, a, check_violation=True)
             
-            # 检查是否有效动作
             if action[0] == -1:
                 break
             
             s_prime, reward, done = env.step(action)
             
-            # 统计实际执行时的约束违反（环境返回负奖励表示违反）
             if reward == -1:
                 violation_count += 1
             
@@ -926,7 +847,6 @@ def phase3_retrain_and_test(config):
         
         makespan = env.future_time
         total_energy = calculate_total_energy(env)
-        # 基于实际执行的约束违反率
         violation_rate = violation_count / step if step > 0 else 0.0
         
         results.append({
@@ -942,19 +862,18 @@ def phase3_retrain_and_test(config):
         print(f"  Episode {ep+1}: Makespan={makespan:.2f}, Energy={total_energy:.2f}, "
               f"Violations={violation_count}, ViolationRate={violation_rate*100:.1f}%")
     
-    # 汇总结果
     avg_makespan = np.mean([r['makespan'] for r in results])
     avg_energy = np.mean([r['total_energy'] for r in results])
     avg_violation_rate = np.mean([r['violation_rate'] for r in results])
     
-    print(f"\n阶段三结果汇总:")
-    print(f"  平均完工时间 (Makespan): {avg_makespan:.2f}")
-    print(f"  平均总能耗 (Energy): {avg_energy:.2f}")
-    print(f"  平均约束违反率: {avg_violation_rate*100:.2f}%")
+    print(f"\nPhase 3 Results Summary:")
+    print(f"  Average Makespan: {avg_makespan:.2f}")
+    print(f"  Average Total Energy: {avg_energy:.2f}")
+    print(f"  Average Constraint Violation Rate: {avg_violation_rate*100:.2f}%")
     
     return {
         'phase': 3,
-        'description': f'重新训练后测试（机器人{disabled_robots}禁用）',
+        'description': f'Retrained testing (robots {disabled_robots} disabled)',
         'disabled_robots': disabled_robots,
         'training_episodes': config['num_of_episodes'],
         'training_time': training_time,
@@ -968,16 +887,15 @@ def phase3_retrain_and_test(config):
 
 
 # =======================
-# 结果可视化
+# Result visualization
 # =======================
 def visualize_results(phase1_result, phase2_result, phase3_result):
-    """可视化三个阶段的结果对比"""
+    """Visualize comparison of results from three phases"""
     
     fig, axes = plt.subplots(1, 3, figsize=(15, 5))
     
     phases = ['Phase 1\n(No Constraint)', 'Phase 2\n(With Constraint)', 'Phase 3\n(Retrained)']
     
-    # 完工时间对比
     makespans = [phase1_result['avg_makespan'], 
                  phase2_result['avg_makespan'], 
                  phase3_result['avg_makespan']]
@@ -990,7 +908,6 @@ def visualize_results(phase1_result, phase2_result, phase3_result):
     ax1.bar_label(bars1, fmt='%.2f')
     ax1.grid(axis='y', alpha=0.3)
     
-    # 能耗对比
     energies = [phase1_result['avg_energy'], 
                 phase2_result['avg_energy'], 
                 phase3_result['avg_energy']]
@@ -1002,7 +919,6 @@ def visualize_results(phase1_result, phase2_result, phase3_result):
     ax2.bar_label(bars2, fmt='%.2f')
     ax2.grid(axis='y', alpha=0.3)
     
-    # 约束违反率对比
     violations = [0, 
                   phase2_result['avg_violation_rate'] * 100, 
                   phase3_result['avg_violation_rate'] * 100]
@@ -1016,11 +932,10 @@ def visualize_results(phase1_result, phase2_result, phase3_result):
     
     plt.tight_layout()
     
-    # 保存图片
     timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
     save_path = f"constraint_change_results_{timestamp}.png"
     plt.savefig(save_path, dpi=300, bbox_inches='tight')
-    print(f"\n结果图片已保存: {save_path}")
+    print(f"\nResult image saved: {save_path}")
     
     plt.show()
     
@@ -1028,7 +943,7 @@ def visualize_results(phase1_result, phase2_result, phase3_result):
 
 
 def save_experiment_results(phase1_result, phase2_result, phase3_result, config):
-    """保存实验结果到JSON文件"""
+    """Save experiment results to JSON file"""
     timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
     
     results = {
@@ -1073,70 +988,63 @@ def save_experiment_results(phase1_result, phase2_result, phase3_result, config)
     with open(save_path, 'w') as f:
         json.dump(results, f, indent=2)
     
-    print(f"实验结果已保存: {save_path}")
+    print(f"Experiment results saved: {save_path}")
     return save_path
 
 
 # =======================
-# 主函数
+# Main Function
 # =======================
 def main():
-    """主函数 - 执行三阶段实验"""
+    """Main function - execute three-phase experiment"""
     print("="*80)
-    print("LIRL约束变化实验")
+    print("LIRL Constraint Change Experiment")
     print("="*80)
-    print(f"实验配置:")
+    print(f"Experiment Configuration:")
     print(f"  Jobs: {CONFIG['num_of_jobs']}")
     print(f"  Robots: {CONFIG['num_of_robots']}")
-    print(f"  禁用机器人: {CONFIG['disabled_robots']}")
-    print(f"  预训练模型: {CONFIG['pretrained_model_path']}")
+    print(f"  Disabled robots: {CONFIG['disabled_robots']}")
+    print(f"  Pretrained model: {CONFIG['pretrained_model_path']}")
     print("="*80)
     
     print_gpu_info()
     
-    # 阶段一：正常测试
     phase1_result = phase1_test_pretrained_model(CONFIG)
     
-    # 阶段二：带约束测试
     phase2_result = phase2_test_with_constraints(CONFIG)
     
-    # 阶段三：重新训练并测试
     phase3_result = phase3_retrain_and_test(CONFIG)
     
-    # 结果对比
     print("\n" + "="*80)
-    print("实验结果对比")
+    print("Experiment Results Comparison")
     print("="*80)
-    print(f"{'指标':<20} {'阶段一(无约束)':<20} {'阶段二(有约束)':<20} {'阶段三(重训练)':<20}")
-    print("-"*80)
-    print(f"{'平均完工时间':<20} {phase1_result['avg_makespan']:<20.2f} {phase2_result['avg_makespan']:<20.2f} {phase3_result['avg_makespan']:<20.2f}")
-    print(f"{'平均总能耗':<20} {phase1_result['avg_energy']:<20.2f} {phase2_result['avg_energy']:<20.2f} {phase3_result['avg_energy']:<20.2f}")
-    print(f"{'约束违反率(%)':<20} {'N/A':<20} {phase2_result['avg_violation_rate']*100:<20.2f} {phase3_result['avg_violation_rate']*100:<20.2f}")
-    print("="*80)
+    print(f"{'Metric':<20} {'Phase 1 (No Constraint)':<25} {'Phase 2 (With Constraint)':<25} {'Phase 3 (Retrained)':<25}")
+    print("-"*95)
+    print(f"{'Average Makespan':<20} {phase1_result['avg_makespan']:<25.2f} {phase2_result['avg_makespan']:<25.2f} {phase3_result['avg_makespan']:<25.2f}")
+    print(f"{'Average Total Energy':<20} {phase1_result['avg_energy']:<25.2f} {phase2_result['avg_energy']:<25.2f} {phase3_result['avg_energy']:<25.2f}")
+    print(f"{'Violation Rate (%)':<20} {'N/A':<25} {phase2_result['avg_violation_rate']*100:<25.2f} {phase3_result['avg_violation_rate']*100:<25.2f}")
+    print("="*95)
     
-    # 计算改进
     if phase2_result['avg_makespan'] > 0:
         makespan_improve = (phase2_result['avg_makespan'] - phase3_result['avg_makespan']) / phase2_result['avg_makespan'] * 100
-        print(f"\n重训练后完工时间改进: {makespan_improve:.2f}%")
+        print(f"\nMakespan improvement after retraining: {makespan_improve:.2f}%")
     
     if phase2_result['avg_energy'] > 0:
         energy_improve = (phase2_result['avg_energy'] - phase3_result['avg_energy']) / phase2_result['avg_energy'] * 100
-        print(f"重训练后能耗改进: {energy_improve:.2f}%")
+        print(f"Energy improvement after retraining: {energy_improve:.2f}%")
     
     violation_reduce = (phase2_result['avg_violation_rate'] - phase3_result['avg_violation_rate']) * 100
-    print(f"约束违反率降低: {violation_reduce:.2f}%")
+    print(f"Constraint violation rate reduction: {violation_reduce:.2f}%")
     
-    # 可视化结果
     try:
         visualize_results(phase1_result, phase2_result, phase3_result)
     except Exception as e:
-        print(f"可视化失败: {e}")
+        print(f"Visualization failed: {e}")
     
-    # 保存结果
     if CONFIG['save_results']:
         save_experiment_results(phase1_result, phase2_result, phase3_result, CONFIG)
     
-    print("\n实验完成!")
+    print("\nExperiment completed!")
     
     return phase1_result, phase2_result, phase3_result
 

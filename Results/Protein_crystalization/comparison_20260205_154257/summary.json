@@ -1,0 +1,57 @@
+[
+  {
+    "Algorithm": "LIRL",
+    "Final Reward (Mean)": 8.01297569594051,
+    "Final Reward (Std)": 3.4276905987207353,
+    "Best Quality (Mean)": 0.4488873971477645,
+    "Best Quality (Std)": 0.16457473732674124,
+    "Max Best Quality": 0.6554340421327931,
+    "CVR": 0.0,
+    "Projection Rate": "N/A",
+    "Max Reward": 14.083478290350946
+  },
+  {
+    "Algorithm": "PDQN",
+    "Final Reward (Mean)": -1.3830189375231228,
+    "Final Reward (Std)": 3.236014135473419,
+    "Best Quality (Mean)": 0.14332703435436606,
+    "Best Quality (Std)": 0.13596679522292068,
+    "Max Best Quality": 0.3490888826381411,
+    "CVR": 0.37496399999999996,
+    "Projection Rate": "N/A",
+    "Max Reward": 5.970991578396857
+  },
+  {
+    "Algorithm": "HPPO",
+    "Final Reward (Mean)": -0.13630677412297457,
+    "Final Reward (Std)": 0.16984166742604317,
+    "Best Quality (Mean)": 0.058267905664070564,
+    "Best Quality (Std)": 0.060971595004409594,
+    "Max Best Quality": 0.32485893501663415,
+    "CVR": 0.30084,
+    "Projection Rate": "N/A",
+    "Max Reward": 1.1014759970246724
+  },
+  {
+    "Algorithm": "CPO",
+    "Final Reward (Mean)": 0.052719917696742044,
+    "Final Reward (Std)": 0.17969783944795023,
+    "Best Quality (Mean)": 0.03053497945751698,
+    "Best Quality (Std)": 0.05011931412401373,
+    "Max Best Quality": 0.3013826847879676,
+    "CVR": 0.449148,
+    "Projection Rate": "N/A",
+    "Max Reward": 1.511613072614621
+  },
+  {
+    "Algorithm": "LPPO",
+    "Final Reward (Mean)": 0.29865096172379707,
+    "Final Reward (Std)": 0.31177258539730607,
+    "Best Quality (Mean)": 0.08438733975326689,
+    "Best Quality (Std)": 0.07210396093968144,
+    "Max Best Quality": 0.3228247071934145,
+    "CVR": 0.135716,
+    "Projection Rate": "N/A",
+    "Max Reward": 1.5845430075341798
+  }
+]

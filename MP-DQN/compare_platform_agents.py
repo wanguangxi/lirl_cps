@@ -1,15 +1,15 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """
-Platform环境算法对比程序
-====================
-对比四种算法在Platform环境上的表现:
+Platform Environment Algorithm Comparison
+=========================================
+Compare four algorithms on Platform environment:
 1. LIRL - Learning with Integer and Real-valued Actions
 2. PADDPG - Parameterised Action DDPG
 3. PDQN - Parameterised DQN
 4. QPAMDP - Q-PAMDP
 
-支持多seeds运行，绘制带置信区间的收敛曲线
+Supports multi-seed runs with confidence interval convergence curves
 """
 
 import os
@@ -24,72 +24,71 @@ import argparse
 
 
 # =======================
-# 配置
+# Configuration
 # =======================
 ALGORITHMS = {
     'LIRL': {
         'script': 'run_platform_lirl.py',
         'title': 'LIRL',
-        'color': '#e74c3c',  # 红色
+        'color': '#e74c3c',
         'marker': 'o'
     },
     'PADDPG': {
         'script': 'run_platform_paddpg.py',
         'title': 'PADDPG',
-        'color': '#3498db',  # 蓝色
+        'color': '#3498db',
         'marker': 's'
     },
     'PDQN': {
         'script': 'run_platform_pdqn.py',
-        'title': 'PDDQN',  # Platform的PDQN默认title是PDDQN
-        'color': '#2ecc71',  # 绿色
+        'title': 'PDDQN',
+        'color': '#2ecc71',
         'marker': '^'
     },
     'QPAMDP': {
         'script': 'run_platform_qpamdp.py',
         'title': 'QPAMDP',
-        'color': '#9b59b6',  # 紫色
+        'color': '#9b59b6',
         'marker': 'd'
     }
 }
 
 
 def format_time(seconds):
-    """格式化时间显示"""
+    """Format time display"""
     if seconds < 60:
-        return f"{seconds:.0f}秒"
+        return f"{seconds:.0f}s"
     elif seconds < 3600:
         minutes = seconds / 60
-        return f"{minutes:.1f}分钟"
+        return f"{minutes:.1f}m"
     else:
         hours = seconds / 3600
-        return f"{hours:.1f}小时"
+        return f"{hours:.1f}h"
 
 
 def run_algorithm(algo_name, algo_config, episodes, seed, save_dir, python_path=None):
     """
-    运行单个算法（实时输出）
+    Run a single algorithm (real-time output)
     
     Args:
-        algo_name: 算法名称
-        algo_config: 算法配置
-        episodes: 训练episode数
-        seed: 随机种子
-        save_dir: 保存目录
-        python_path: Python解释器路径
+        algo_name: Algorithm name
+        algo_config: Algorithm configuration
+        episodes: Number of training episodes
+        seed: Random seed
+        save_dir: Save directory
+        python_path: Python interpreter path
     
     Returns:
-        dict: 包含训练结果的字典
+        dict: Dictionary containing training results
     """
     if python_path is None:
         python_path = sys.executable
     
     script_path = os.path.join(os.path.dirname(__file__), algo_config['script'])
     
-    # 构建命令
     cmd = [
         python_path,
-        '-u',  # 禁用Python输出缓冲，实现实时输出
+        '-u',
         script_path,
         '--episodes', str(episodes),
         '--seed', str(seed),
@@ -98,11 +97,9 @@ def run_algorithm(algo_name, algo_config, episodes, seed, save_dir, python_path=
         '--evaluation-episodes', '100'
     ]
     
-    # PDQN特殊参数：禁用可视化
     if algo_name == 'PDQN':
         cmd.extend(['--visualise', 'False'])
     
-    # LIRL特殊参数：禁用可视化
     if algo_name == 'LIRL':
         cmd.extend(['--visualise', 'False'])
     
@@ -117,7 +114,6 @@ def run_algorithm(algo_name, algo_config, episodes, seed, save_dir, python_path=
     stderr_lines = []
     
     try:
-        # 使用Popen实现实时输出
         process = subprocess.Popen(
             cmd,
             stdout=subprocess.PIPE,
@@ -126,7 +122,6 @@ def run_algorithm(algo_name, algo_config, episodes, seed, save_dir, python_path=
             bufsize=1
         )
         
-        # 实时读取并打印stdout
         while True:
             line = process.stdout.readline()
             if line:
@@ -141,7 +136,6 @@ def run_algorithm(algo_name, algo_config, episodes, seed, save_dir, python_path=
                     stdout_lines.append(remaining_stdout)
                 break
         
-        # 读取stderr
         stderr_output = process.stderr.read()
         if stderr_output:
             print("STDERR:", stderr_output)
@@ -150,7 +144,6 @@ def run_algorithm(algo_name, algo_config, episodes, seed, save_dir, python_path=
         training_time = time.time() - start_time
         returncode = process.returncode
         
-        # 加载结果
         possible_paths = [
             os.path.join(save_dir, algo_config['title'], f"{algo_config['title']}{seed}.npy"),
             os.path.join(save_dir, algo_config['title'], str(seed), f"{algo_config['title']}{seed}.npy"),
@@ -191,26 +184,25 @@ def run_algorithm(algo_name, algo_config, episodes, seed, save_dir, python_path=
 def run_algorithm_multi_seeds(algo_name, algo_config, episodes, seeds, save_dir, python_path=None,
                                progress_info=None):
     """
-    使用多个seeds运行单个算法
+    Run a single algorithm with multiple seeds
     
     Args:
-        algo_name: 算法名称
-        algo_config: 算法配置
-        episodes: 训练episode数
-        seeds: 随机种子列表
-        save_dir: 保存目录
-        python_path: Python解释器路径
-        progress_info: 进度信息字典
+        algo_name: Algorithm name
+        algo_config: Algorithm configuration
+        episodes: Number of training episodes
+        seeds: List of random seeds
+        save_dir: Save directory
+        python_path: Python interpreter path
+        progress_info: Progress info dictionary
     
     Returns:
-        dict: 包含所有seeds训练结果的字典
+        dict: Dictionary containing training results for all seeds
     """
     all_returns = []
     all_training_times = []
     all_successes = []
     
     for seed_idx, seed in enumerate(seeds):
-        # 计算总体进度
         if progress_info is not None:
             current_task = progress_info['completed'] + seed_idx + 1
             total_tasks = progress_info['total']
@@ -219,11 +211,11 @@ def run_algorithm_multi_seeds(algo_name, algo_config, episodes, seeds, save_dir,
                 avg_time_per_task = np.mean(progress_info['elapsed_times'])
                 remaining_tasks = total_tasks - current_task + 1
                 estimated_remaining = avg_time_per_task * remaining_tasks
-                eta_str = f" | 预估剩余: {format_time(estimated_remaining)}"
+                eta_str = f" | ETA: {format_time(estimated_remaining)}"
             else:
                 eta_str = ""
             
-            progress_str = f"总进度: {current_task}/{total_tasks} ({100*current_task/total_tasks:.1f}%){eta_str}"
+            progress_str = f"Progress: {current_task}/{total_tasks} ({100*current_task/total_tasks:.1f}%){eta_str}"
         else:
             progress_str = ""
         
@@ -247,11 +239,10 @@ def run_algorithm_multi_seeds(algo_name, algo_config, episodes, seeds, save_dir,
         all_training_times.append(result['training_time'])
         all_successes.append(result['success'])
         
-        # 更新进度信息
         if progress_info is not None:
             progress_info['elapsed_times'].append(result['training_time'])
         
-        print(f"\n>>> Seed {seed} 完成，耗时: {format_time(result['training_time'])}")
+        print(f"\n>>> Seed {seed} completed, time: {format_time(result['training_time'])}")
         sys.stdout.flush()
     
     return {
@@ -263,7 +254,7 @@ def run_algorithm_multi_seeds(algo_name, algo_config, episodes, seeds, save_dir,
 
 
 def smooth_curve(data, window=100):
-    """平滑曲线"""
+    """Smooth curve"""
     if len(data) < window:
         return data
     smoothed = np.convolve(data, np.ones(window)/window, mode='valid')
@@ -272,11 +263,11 @@ def smooth_curve(data, window=100):
 
 def align_and_aggregate_returns(returns_list, smooth_window=100):
     """
-    对齐并聚合多个seeds的returns
+    Align and aggregate returns from multiple seeds
     
     Args:
-        returns_list: 每个seed的returns列表
-        smooth_window: 平滑窗口大小
+        returns_list: List of returns for each seed
+        smooth_window: Smoothing window size
     
     Returns:
         tuple: (episodes, mean_returns, std_returns)
@@ -306,7 +297,7 @@ def align_and_aggregate_returns(returns_list, smooth_window=100):
 
 
 def calculate_metrics(returns):
-    """计算单个seed的评估指标"""
+    """Calculate evaluation metrics for a single seed"""
     if len(returns) == 0:
         return {
             'mean_return': 0,
@@ -331,13 +322,13 @@ def calculate_metrics(returns):
 
 def calculate_aggregated_metrics(returns_list):
     """
-    计算多个seeds的聚合指标
+    Calculate aggregated metrics across multiple seeds
     
     Args:
-        returns_list: 每个seed的returns列表
+        returns_list: List of returns for each seed
     
     Returns:
-        dict: 聚合指标字典
+        dict: Aggregated metrics dictionary
     """
     valid_returns = [r for r in returns_list if len(r) > 0]
     
@@ -352,7 +343,6 @@ def calculate_aggregated_metrics(returns_list):
             'num_seeds': 0
         }
     
-    # 计算每个seed的最后100 episodes指标
     last_100_means = []
     for returns in valid_returns:
         last_100 = returns[-100:] if len(returns) >= 100 else returns
@@ -375,7 +365,7 @@ def calculate_aggregated_metrics(returns_list):
 
 def plot_comparison_multi_seeds(all_results, save_path, smooth_window=100):
     """
-    绘制多seeds对比图（带置信区间）
+    Plot multi-seed comparison chart (with confidence intervals)
     """
     valid_results = {k: v for k, v in all_results.items() 
                      if any(len(r) > 0 for r in v['returns_per_seed'])}
@@ -386,7 +376,6 @@ def plot_comparison_multi_seeds(all_results, save_path, smooth_window=100):
     
     fig, axes = plt.subplots(2, 2, figsize=(16, 12))
     
-    # 1. 学习曲线对比 (带置信区间)
     ax1 = axes[0, 0]
     for algo_name, result in valid_results.items():
         config = ALGORITHMS[algo_name]
@@ -406,7 +395,6 @@ def plot_comparison_multi_seeds(all_results, save_path, smooth_window=100):
         ax1.legend(fontsize=10)
     ax1.grid(alpha=0.3)
     
-    # 2. 最终100 episodes平均回报对比
     ax2 = axes[0, 1]
     names = []
     means = []
@@ -432,13 +420,11 @@ def plot_comparison_multi_seeds(all_results, save_path, smooth_window=100):
             ax2.text(bar.get_x() + bar.get_width()/2, bar.get_height() + std + 0.5,
                     f'{mean:.1f}±{std:.1f}', ha='center', va='bottom', fontsize=9)
     
-    # 3. 回报箱线图
     ax3 = axes[1, 0]
     box_data = []
     box_labels = []
     box_colors = []
     for algo_name, result in valid_results.items():
-        # 收集所有seeds的最后100 episodes
         all_last_100 = []
         for returns in result['returns_per_seed']:
             if len(returns) > 0:
@@ -458,7 +444,6 @@ def plot_comparison_multi_seeds(all_results, save_path, smooth_window=100):
         ax3.set_title('Final 100 Episodes Return Distribution (All Seeds)', fontsize=14)
         ax3.grid(axis='y', alpha=0.3)
     
-    # 4. 训练时间对比
     ax4 = axes[1, 1]
     time_means = []
     time_stds = []
@@ -486,7 +471,7 @@ def plot_comparison_multi_seeds(all_results, save_path, smooth_window=100):
 
 
 def plot_learning_curves_all_seeds(all_results, save_path, smooth_window=100):
-    """绘制所有seeds的学习曲线"""
+    """Plot learning curves for all seeds"""
     valid_results = {k: v for k, v in all_results.items() 
                      if any(len(r) > 0 for r in v['returns_per_seed'])}
     
@@ -504,14 +489,12 @@ def plot_learning_curves_all_seeds(all_results, save_path, smooth_window=100):
         ax = axes[idx]
         config = ALGORITHMS[algo_name]
         
-        # 绘制每个seed的曲线
         for seed_idx, returns in enumerate(result['returns_per_seed']):
             if len(returns) > 0:
                 smoothed = smooth_curve(returns, window=smooth_window)
                 ax.plot(np.arange(len(smoothed)) + smooth_window//2, smoothed, 
                        color=config['color'], alpha=0.3, linewidth=1)
         
-        # 绘制均值曲线
         episodes, mean_returns, std_returns = align_and_aggregate_returns(
             result['returns_per_seed'], smooth_window
         )
@@ -526,7 +509,6 @@ def plot_learning_curves_all_seeds(all_results, save_path, smooth_window=100):
         ax.set_title(f'{algo_name}', fontsize=13, fontweight='bold')
         ax.grid(alpha=0.3)
         
-        # 添加统计信息
         metrics = calculate_aggregated_metrics(result['returns_per_seed'])
         info_text = f"Seeds: {metrics['num_seeds']}\n"
         info_text += f"Last 100: {metrics['last_100_mean']:.1f}±{metrics['last_100_std']:.1f}\n"
@@ -542,7 +524,7 @@ def plot_learning_curves_all_seeds(all_results, save_path, smooth_window=100):
 
 
 def plot_convergence_comparison(all_results, save_path, smooth_window=100):
-    """绘制收敛曲线对比图"""
+    """Plot convergence curve comparison"""
     valid_results = {k: v for k, v in all_results.items() 
                      if any(len(r) > 0 for r in v['returns_per_seed'])}
     
@@ -577,20 +559,19 @@ def plot_convergence_comparison(all_results, save_path, smooth_window=100):
 
 
 def generate_report_multi_seeds(all_results, save_path, episodes, seeds):
-    """生成多seeds文本报告"""
+    """Generate multi-seed text report"""
     report = []
     report.append("="*70)
-    report.append("Platform环境算法对比报告 (多Seeds)")
+    report.append("Platform Environment Algorithm Comparison Report (Multi-Seeds)")
     report.append("="*70)
-    report.append(f"生成时间: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
-    report.append(f"训练Episodes: {episodes}")
-    report.append(f"Seeds数量: {len(seeds)}")
-    report.append(f"Seeds列表: {seeds}")
+    report.append(f"Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+    report.append(f"Training Episodes: {episodes}")
+    report.append(f"Number of Seeds: {len(seeds)}")
+    report.append(f"Seeds List: {seeds}")
     report.append("")
     
-    # 汇总表格
     report.append("-"*70)
-    report.append(f"{'算法':<12} {'最后100回报':<18} {'最大回报':<14} {'训练时间(分钟)':<16}")
+    report.append(f"{'Algorithm':<12} {'Last 100 Return':<18} {'Max Return':<14} {'Training Time (min)':<20}")
     report.append("-"*70)
     
     for algo_name, result in all_results.items():
@@ -608,31 +589,29 @@ def generate_report_multi_seeds(all_results, save_path, episodes, seeds):
     report.append("-"*70)
     report.append("")
     
-    # 详细指标
-    report.append("详细指标 (跨Seeds统计):")
+    report.append("Detailed Metrics (Cross-Seed Statistics):")
     report.append("")
     
     for algo_name, result in all_results.items():
-        report.append(f"【{algo_name}】")
+        report.append(f"[{algo_name}]")
         metrics = calculate_aggregated_metrics(result['returns_per_seed'])
         
-        report.append(f"  有效Seeds数: {metrics['num_seeds']}")
-        report.append(f"  总体平均回报: {metrics['mean_return']:.4f} ± {metrics['std_return']:.4f}")
-        report.append(f"  最后100回合平均回报: {metrics['last_100_mean']:.4f} ± {metrics['last_100_std']:.4f}")
-        report.append(f"  平均最大回报: {metrics['max_return']:.2f}")
-        report.append(f"  平均最小回报: {metrics['min_return']:.2f}")
+        report.append(f"  Valid Seeds: {metrics['num_seeds']}")
+        report.append(f"  Overall Mean Return: {metrics['mean_return']:.4f} ± {metrics['std_return']:.4f}")
+        report.append(f"  Last 100 Episodes Mean Return: {metrics['last_100_mean']:.4f} ± {metrics['last_100_std']:.4f}")
+        report.append(f"  Average Max Return: {metrics['max_return']:.2f}")
+        report.append(f"  Average Min Return: {metrics['min_return']:.2f}")
         
-        # 每个seed的详细信息
-        report.append(f"  各Seed详情:")
+        report.append(f"  Seed Details:")
         for seed_idx, (seed, returns) in enumerate(zip(result['seeds'], result['returns_per_seed'])):
             if len(returns) > 0:
                 seed_metrics = calculate_metrics(returns)
                 time_min = result['training_times'][seed_idx] / 60
-                report.append(f"    Seed {seed}: 回报={seed_metrics['last_100_mean']:.2f}, "
-                            f"最大={seed_metrics['max_return']:.2f}, "
-                            f"时间={time_min:.1f}分钟")
+                report.append(f"    Seed {seed}: Return={seed_metrics['last_100_mean']:.2f}, "
+                            f"Max={seed_metrics['max_return']:.2f}, "
+                            f"Time={time_min:.1f} min")
             else:
-                report.append(f"    Seed {seed}: 无有效数据")
+                report.append(f"    Seed {seed}: No valid data")
         report.append("")
     
     report.append("="*70)
@@ -648,7 +627,7 @@ def generate_report_multi_seeds(all_results, save_path, episodes, seeds):
 
 
 def save_results_json_multi_seeds(all_results, save_path, episodes, seeds):
-    """保存JSON格式结果（多seeds）"""
+    """Save JSON format results (multi-seeds)"""
     data = {
         'timestamp': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
         'environment': 'Platform-v0',
@@ -696,37 +675,32 @@ def main():
     
     args = parser.parse_args()
     
-    # 生成seeds列表
     seeds = list(range(args.base_seed, args.base_seed + args.num_seeds))
     
-    # 创建保存目录
     timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
     save_dir = os.path.join(args.save_dir, f'compare_{timestamp}')
     os.makedirs(save_dir, exist_ok=True)
     
     print("="*70)
-    print("Platform环境算法对比实验 (多Seeds)")
+    print("Platform Environment Algorithm Comparison Experiment (Multi-Seeds)")
     print("="*70)
-    print(f"训练Episodes: {args.episodes}")
-    print(f"Seeds数量: {args.num_seeds}")
-    print(f"Seeds列表: {seeds}")
-    print(f"保存目录: {save_dir}")
+    print(f"Training Episodes: {args.episodes}")
+    print(f"Number of Seeds: {args.num_seeds}")
+    print(f"Seeds List: {seeds}")
+    print(f"Save Directory: {save_dir}")
     print("="*70)
     
-    # 选择要运行的算法
     if args.algorithms:
         algorithms_to_run = {k: v for k, v in ALGORITHMS.items() if k in args.algorithms}
     else:
         algorithms_to_run = ALGORITHMS
     
-    print(f"将运行以下算法: {list(algorithms_to_run.keys())}")
-    print(f"每个算法将运行 {args.num_seeds} 次 (seeds: {seeds})")
+    print(f"Algorithms to run: {list(algorithms_to_run.keys())}")
+    print(f"Each algorithm will run {args.num_seeds} times (seeds: {seeds})")
     
-    # 计算总任务数
     total_tasks = len(algorithms_to_run) * args.num_seeds
-    print(f"总任务数: {total_tasks} (= {len(algorithms_to_run)} 算法 × {args.num_seeds} seeds)")
+    print(f"Total tasks: {total_tasks} (= {len(algorithms_to_run)} algorithms × {args.num_seeds} seeds)")
     
-    # 初始化进度跟踪
     progress_info = {
         'completed': 0,
         'total': total_tasks,
@@ -734,19 +708,18 @@ def main():
         'start_time': time.time()
     }
     
-    # 运行所有算法
     all_results = {}
     
     for algo_idx, (algo_name, algo_config) in enumerate(algorithms_to_run.items()):
         print(f"\n{'*'*70}")
-        print(f"* 开始运行 {algo_name} ({args.num_seeds} seeds)")
-        print(f"* 算法进度: {algo_idx+1}/{len(algorithms_to_run)}")
+        print(f"* Starting {algo_name} ({args.num_seeds} seeds)")
+        print(f"* Algorithm progress: {algo_idx+1}/{len(algorithms_to_run)}")
         if len(progress_info['elapsed_times']) > 0:
             total_elapsed = time.time() - progress_info['start_time']
             avg_per_task = np.mean(progress_info['elapsed_times'])
             remaining_tasks = total_tasks - progress_info['completed']
             est_remaining = avg_per_task * remaining_tasks
-            print(f"* 已运行: {format_time(total_elapsed)} | 预估剩余: {format_time(est_remaining)}")
+            print(f"* Elapsed: {format_time(total_elapsed)} | ETA: {format_time(est_remaining)}")
         print(f"{'*'*70}")
         sys.stdout.flush()
         
@@ -761,10 +734,8 @@ def main():
         )
         all_results[algo_name] = result
         
-        # 更新已完成数
         progress_info['completed'] += args.num_seeds
         
-        # 保存每个算法的结果
         valid_returns = [r for r in result['returns_per_seed'] if len(r) > 0]
         if len(valid_returns) > 0:
             for seed_idx, returns in enumerate(result['returns_per_seed']):
@@ -774,12 +745,10 @@ def main():
                         returns
                     )
     
-    # 计算总耗时
     total_time = time.time() - progress_info['start_time']
     
-    # 生成对比图
     print("\n" + "="*70)
-    print("生成对比图...")
+    print("Generating comparison plots...")
     print("="*70)
     
     plot_comparison_multi_seeds(
@@ -798,24 +767,23 @@ def main():
         args.smooth_window
     )
     
-    # 生成报告
-    print("\n生成报告...")
+    print("\nGenerating report...")
     generate_report_multi_seeds(all_results, os.path.join(save_dir, 'report.txt'), args.episodes, seeds)
     save_results_json_multi_seeds(all_results, os.path.join(save_dir, 'results.json'), args.episodes, seeds)
     
     print("\n" + "="*70)
-    print("对比实验完成!")
+    print("Comparison experiment completed!")
     print("="*70)
-    print(f"总耗时: {format_time(total_time)}")
-    print(f"完成任务: {progress_info['completed']}/{total_tasks}")
-    print(f"平均每任务: {format_time(np.mean(progress_info['elapsed_times'])) if progress_info['elapsed_times'] else 'N/A'}")
-    print(f"结果保存在: {save_dir}")
-    print("生成的文件:")
-    print(f"  - comparison.png: 综合对比图")
-    print(f"  - learning_curves.png: 各算法学习曲线")
-    print(f"  - convergence_comparison.png: 收敛曲线对比")
-    print(f"  - report.txt: 文本报告")
-    print(f"  - results.json: JSON格式结果")
+    print(f"Total time: {format_time(total_time)}")
+    print(f"Completed tasks: {progress_info['completed']}/{total_tasks}")
+    print(f"Average per task: {format_time(np.mean(progress_info['elapsed_times'])) if progress_info['elapsed_times'] else 'N/A'}")
+    print(f"Results saved to: {save_dir}")
+    print("Generated files:")
+    print(f"  - comparison.png: Comprehensive comparison chart")
+    print(f"  - learning_curves.png: Learning curves for each algorithm")
+    print(f"  - convergence_comparison.png: Convergence curve comparison")
+    print(f"  - report.txt: Text report")
+    print(f"  - results.json: JSON format results")
     print("="*70)
     
     return all_results

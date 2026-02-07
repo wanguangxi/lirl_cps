@@ -3,10 +3,10 @@
 """
 LIRL Agent for Platform Environment
 ====================================
-基于LIRL算法在Platform环境上训练
+Train on Platform environment using LIRL algorithm
 
 LIRL (Learning with Integer and Real-valued Actions via Lagrangian relaxation)
-使用动作投影函数将连续网络输出映射到混合离散-连续动作空间
+Uses action projection function to map continuous network output to mixed discrete-continuous action space
 """
 
 import os
@@ -27,7 +27,7 @@ from common.wrappers import ScaledParameterisedActionWrapper
 from common.platform_domain import PlatformFlattenedActionWrapper
 from common.wrappers import ScaledStateWrapper
 
-# 尝试导入scipy，如果不可用则使用numpy实现
+# Try importing scipy, use numpy implementation if unavailable
 try:
     from scipy.optimize import minimize, linear_sum_assignment
     SCIPY_AVAILABLE = True
@@ -37,67 +37,63 @@ except ImportError:
 
 
 # =======================
-# 设备配置
+# Device Configuration
 # =======================
 device = torch.device("cpu")
 
 
 # =======================
-# 动作投影函数
+# Action Projection Function
 # =======================
 class ActionProjection:
     """
-    LIRL动作投影类
-    将网络输出的连续动作投影到有效的离散-连续混合动作空间
+    LIRL Action Projection Class
+    Projects network output continuous actions to valid discrete-continuous mixed action space
     
-    Platform环境动作空间:
-    - 3个离散动作: run(0), hop(1), leap(2)
-    - 连续参数: 每个动作各需要1个参数
+    Platform environment action space:
+    - 3 discrete actions: run(0), hop(1), leap(2)
+    - Continuous parameters: each action requires 1 parameter
     """
     
     def __init__(self, action_space, use_qp=True):
         """
         Args:
-            action_space: 环境的动作空间
-            use_qp: 是否使用QP求解连续参数投影
+            action_space: Environment action space
+            use_qp: Whether to use QP for continuous parameter projection
         """
         self.use_qp = use_qp
-        self.num_actions = 3  # run, hop, leap
+        self.num_actions = 3
         
-        # 动作参数的维度 - Platform环境中每个动作都有1个参数
-        self.action_param_sizes = [1, 1, 1]  # run:1, hop:1, leap:1
-        self.action_param_offsets = [0, 1, 2, 3]  # 累计偏移量
+        self.action_param_sizes = [1, 1, 1]
+        self.action_param_offsets = [0, 1, 2, 3]
         
-        # 参数范围 (假设已经被ScaledParameterisedActionWrapper缩放到[-1,1])
         self.param_min = -1.0
         self.param_max = 1.0
         
-        # 计时统计
         self.reset_timings()
     
     def reset_timings(self):
-        """重置计时统计"""
+        """Reset timing statistics"""
         self.discrete_selection_times = []
         self.qp_times = []
         self.total_projection_times = []
     
     def project(self, action_probs, action_params, record_timing=True):
         """
-        将网络输出投影到有效动作空间
+        Project network output to valid action space
         
         Args:
-            action_probs: 离散动作的概率分布 [3]
-            action_params: 连续动作参数 [3]
-            record_timing: 是否记录时间
+            action_probs: Discrete action probability distribution [3]
+            action_params: Continuous action parameters [3]
+            record_timing: Whether to record timing
         
         Returns:
-            discrete_action: 选择的离散动作索引
-            continuous_params: 投影后的连续参数
-            timing_info: 计时信息字典
+            discrete_action: Selected discrete action index
+            continuous_params: Projected continuous parameters
+            timing_info: Timing information dictionary
         """
         total_start = time.perf_counter()
         
-        # 转换为numpy
         if isinstance(action_probs, torch.Tensor):
             action_probs = action_probs.detach().cpu().numpy()
         if isinstance(action_params, torch.Tensor):
@@ -106,19 +102,16 @@ class ActionProjection:
         action_probs = np.asarray(action_probs).flatten()
         action_params = np.asarray(action_params).flatten()
         
-        # 1. 离散动作选择 (使用匈牙利算法的思想)
         discrete_start = time.perf_counter()
         discrete_action = self._select_discrete_action(action_probs)
         discrete_time = time.perf_counter() - discrete_start
         
-        # 2. 连续参数投影 (使用QP)
         qp_start = time.perf_counter()
         projected_params = self._project_continuous_params(action_params, discrete_action)
         qp_time = time.perf_counter() - qp_start
         
         total_time = time.perf_counter() - total_start
         
-        # 记录时间
         if record_timing:
             self.discrete_selection_times.append(discrete_time)
             self.qp_times.append(qp_time)
@@ -134,43 +127,36 @@ class ActionProjection:
     
     def _select_discrete_action(self, action_probs):
         """
-        选择离散动作
-        使用基于代价矩阵的方法（简化的匈牙利算法思想）
+        Select discrete action
+        Uses cost matrix-based method (simplified Hungarian algorithm idea)
         
-        对于Platform环境，我们构建一个代价矩阵来选择最优动作
+        For Platform environment, we build a cost matrix to select optimal action
         """
-        # 构建代价矩阵: 代价 = 1 - 概率 (最大化概率 = 最小化代价)
-        # 这里简化为直接选择概率最高的动作
-        # 在更复杂的场景中，可以考虑动作之间的约束
-        
         cost_matrix = np.zeros((1, self.num_actions))
         for i in range(self.num_actions):
             cost_matrix[0, i] = 1.0 - action_probs[i]
         
         if SCIPY_AVAILABLE:
-            # 使用匈牙利算法求解 (对于单行矩阵，等价于argmin)
             row_ind, col_ind = linear_sum_assignment(cost_matrix)
             return col_ind[0]
         else:
-            # Numpy fallback: 对于单行代价矩阵，argmin等价于匈牙利算法
             return np.argmin(cost_matrix[0])
     
     def _project_continuous_params(self, action_params, discrete_action):
         """
-        将连续参数投影到有效范围
-        使用QP (Quadratic Programming) 求解最近的可行解
+        Project continuous parameters to valid range
+        Uses QP (Quadratic Programming) to solve for nearest feasible solution
         
-        目标: min ||x - v||^2
-        约束: param_min <= x <= param_max
+        Objective: min ||x - v||^2
+        Constraints: param_min <= x <= param_max
         
         Args:
-            action_params: 原始连续参数 [3]
-            discrete_action: 选择的离散动作
+            action_params: Original continuous parameters [3]
+            discrete_action: Selected discrete action
         
         Returns:
-            投影后的参数（仅返回对应动作所需的参数）
+            Projected parameters (only returns parameters needed for the selected action)
         """
-        # 获取当前动作对应的参数
         start_idx = self.action_param_offsets[discrete_action]
         end_idx = self.action_param_offsets[discrete_action + 1]
         params_for_action = action_params[start_idx:end_idx]
@@ -178,26 +164,25 @@ class ActionProjection:
         if self.use_qp:
             projected = self._solve_qp(params_for_action)
         else:
-            # 简单clip
             projected = np.clip(params_for_action, self.param_min, self.param_max)
         
         return projected
     
     def _solve_qp(self, v):
         """
-        使用QP求解参数投影
+        Solve parameter projection using QP
         
-        目标函数: min 0.5 * ||x - v||^2
-        约束: param_min <= x <= param_max
+        Objective function: min 0.5 * ||x - v||^2
+        Constraints: param_min <= x <= param_max
         
-        对于简单的盒式约束(box constraints)，最优解就是将v投影到[min,max]范围内
-        即 x* = clip(v, min, max)
+        For simple box constraints, the optimal solution is to project v to [min,max] range
+        i.e., x* = clip(v, min, max)
         
         Args:
-            v: 原始参数向量
+            v: Original parameter vector
         
         Returns:
-            投影后的参数向量
+            Projected parameter vector
         """
         v = np.asarray(v, dtype=np.float64)
         n = len(v)
@@ -206,19 +191,14 @@ class ActionProjection:
             return v
         
         if SCIPY_AVAILABLE and self.use_qp:
-            # 使用scipy优化器（支持更复杂的约束）
-            # 目标函数
             def objective(x):
                 return 0.5 * np.sum((x - v) ** 2)
             
-            # 梯度
             def gradient(x):
                 return x - v
             
-            # 边界约束
             bounds = [(self.param_min, self.param_max) for _ in range(n)]
             
-            # 初始点 (clip到可行域内)
             x0 = np.clip(v, self.param_min, self.param_max)
             
             try:
@@ -238,25 +218,22 @@ class ActionProjection:
             except Exception:
                 return np.clip(v, self.param_min, self.param_max)
         else:
-            # Numpy fallback: 对于盒式约束，clip就是最优解
-            # 数学证明: min ||x-v||^2 s.t. a<=x<=b 的解是 x*=clip(v,a,b)
             return np.clip(v, self.param_min, self.param_max)
     
     def project_with_constraints(self, action_probs, action_params, 
                                   action_mask=None, param_constraints=None):
         """
-        带额外约束的动作投影
+        Action projection with additional constraints
         
         Args:
-            action_probs: 离散动作概率
-            action_params: 连续参数
-            action_mask: 可选的动作掩码 [3], True表示该动作可用
-            param_constraints: 可选的参数约束字典
+            action_probs: Discrete action probabilities
+            action_params: Continuous parameters
+            action_mask: Optional action mask [3], True means action is available
+            param_constraints: Optional parameter constraints dictionary
         
         Returns:
             discrete_action, continuous_params, timing_info
         """
-        # 应用动作掩码
         if action_mask is not None:
             masked_probs = action_probs.copy()
             masked_probs[~action_mask] = -np.inf
@@ -265,7 +242,7 @@ class ActionProjection:
         return self.project(action_probs, action_params)
     
     def get_timing_statistics(self):
-        """获取计时统计信息"""
+        """Get timing statistics"""
         stats = {}
         
         if self.discrete_selection_times:
@@ -298,7 +275,7 @@ class ActionProjection:
         return stats
     
     def print_timing_summary(self):
-        """打印计时摘要"""
+        """Print timing summary"""
         stats = self.get_timing_statistics()
         
         print("\n" + "="*60)
@@ -307,31 +284,31 @@ class ActionProjection:
         
         if 'discrete_selection' in stats:
             ds = stats['discrete_selection']
-            print(f"\n离散动作选择 (Hungarian):")
-            print(f"  平均: {ds['mean']*1000:.4f} ms")
-            print(f"  标准差: {ds['std']*1000:.4f} ms")
+            print(f"\nDiscrete Action Selection (Hungarian):")
+            print(f"  Mean: {ds['mean']*1000:.4f} ms")
+            print(f"  Std: {ds['std']*1000:.4f} ms")
         
         if 'qp' in stats:
             qp = stats['qp']
-            print(f"\nQP求解 (连续参数投影):")
-            print(f"  平均: {qp['mean']*1000:.4f} ms")
-            print(f"  标准差: {qp['std']*1000:.4f} ms")
+            print(f"\nQP Solving (Continuous Parameter Projection):")
+            print(f"  Mean: {qp['mean']*1000:.4f} ms")
+            print(f"  Std: {qp['std']*1000:.4f} ms")
         
         if 'total_projection' in stats:
             tp = stats['total_projection']
-            print(f"\n总投影时间:")
-            print(f"  平均: {tp['mean']*1000:.4f} ms")
-            print(f"  标准差: {tp['std']*1000:.4f} ms")
-            print(f"  调用次数: {tp['count']}")
+            print(f"\nTotal Projection Time:")
+            print(f"  Mean: {tp['mean']*1000:.4f} ms")
+            print(f"  Std: {tp['std']*1000:.4f} ms")
+            print(f"  Call Count: {tp['count']}")
         
         print("="*60)
 
 
 # =======================
-# 神经网络定义
+# Neural Network Definitions
 # =======================
 class ReplayBuffer:
-    """经验回放缓冲区"""
+    """Experience replay buffer"""
     def __init__(self, buffer_limit):
         self.buffer = collections.deque(maxlen=buffer_limit)
     
@@ -364,38 +341,33 @@ class ReplayBuffer:
 
 
 class MuNet(nn.Module):
-    """Actor网络 - 输出连续动作"""
+    """Actor Network - Outputs continuous actions"""
     def __init__(self, state_size, action_size, hidden_layers=(128,)):
         super(MuNet, self).__init__()
         self.layers = nn.ModuleList()
         
-        # 构建隐藏层
         last_size = state_size
         for hidden_size in hidden_layers:
             self.layers.append(nn.Linear(last_size, hidden_size))
             last_size = hidden_size
         
-        # 输出层：3个动作的选择概率 + 3个连续参数
-        self.action_output = nn.Linear(last_size, 3)  # 3个离散动作
-        self.param_output = nn.Linear(last_size, action_size)  # 连续参数
+        self.action_output = nn.Linear(last_size, 3)
+        self.param_output = nn.Linear(last_size, action_size)
 
     def forward(self, x):
         for layer in self.layers:
             x = F.relu(layer(x))
         
-        # 动作概率（用于选择离散动作）
         action_probs = F.softmax(self.action_output(x), dim=-1)
-        # 连续参数（用tanh映射到[-1,1]，后续会缩放到实际范围）
         action_params = torch.tanh(self.param_output(x))
         
         return action_probs, action_params
 
 
 class QNet(nn.Module):
-    """Critic网络 - 评估Q值"""
+    """Critic Network - Evaluates Q-values"""
     def __init__(self, state_size, action_size, hidden_layers=(128,)):
         super(QNet, self).__init__()
-        # 输入：状态 + 3个动作概率 + 连续参数
         input_size = state_size + 3 + action_size
         
         self.layers = nn.ModuleList()
@@ -414,7 +386,7 @@ class QNet(nn.Module):
 
 
 class OrnsteinUhlenbeckNoise:
-    """OU噪声用于探索"""
+    """OU noise for exploration"""
     def __init__(self, size, mu=0., theta=0.15, sigma=0.2):
         self.mu = mu * np.ones(size)
         self.theta = theta
@@ -444,19 +416,17 @@ class LIRLAgent:
                  use_action_projection=True, seed=None):
         
         self.state_size = state_size
-        self.action_param_size = action_param_size  # 3: run(1) + hop(1) + leap(1)
+        self.action_param_size = action_param_size
         self.gamma = gamma
         self.tau = tau
         self.batch_size = batch_size
         self.use_action_projection = use_action_projection
         
-        # 设置随机种子
         if seed is not None:
             random.seed(seed)
             np.random.seed(seed)
             torch.manual_seed(seed)
         
-        # 初始化网络
         self.mu = MuNet(state_size, action_param_size, hidden_layers).to(device)
         self.mu_target = MuNet(state_size, action_param_size, hidden_layers).to(device)
         self.mu_target.load_state_dict(self.mu.state_dict())
@@ -465,36 +435,27 @@ class LIRLAgent:
         self.q_target = QNet(state_size, action_param_size, hidden_layers).to(device)
         self.q_target.load_state_dict(self.q.state_dict())
         
-        # 优化器
         self.mu_optimizer = optim.Adam(self.mu.parameters(), lr=lr_actor)
         self.q_optimizer = optim.Adam(self.q.parameters(), lr=lr_critic)
         
-        # 经验回放
         self.memory = ReplayBuffer(buffer_size)
         
-        # 探索噪声
         self.noise = OrnsteinUhlenbeckNoise(action_param_size)
         
-        # 动作投影器
         self.action_projector = ActionProjection(action_space, use_qp=True)
         
-        # 动作参数范围（Platform环境）
-        # run: param in [-1,1]
-        # hop: param in [-1,1]
-        # leap: param in [-1,1]
         self.action_param_min = np.array([-1., -1., -1.])
         self.action_param_max = np.array([1., 1., 1.])
         
-        # Epsilon for exploration
         self.epsilon = 1.0
         self.epsilon_final = 0.01
         self.epsilon_decay = 0.9995
         
     def act(self, state, add_noise=True):
         """
-        选择动作
+        Select action
         
-        使用LIRL的动作投影函数将网络输出映射到有效动作空间
+        Uses LIRL action projection function to map network output to valid action space
         """
         with torch.no_grad():
             state_tensor = torch.from_numpy(state).float().to(device)
@@ -505,48 +466,39 @@ class LIRLAgent:
             action_probs = action_probs.cpu().numpy().squeeze()
             action_params = action_params.cpu().numpy().squeeze()
         
-        # 添加探索噪声
         if add_noise:
             if np.random.random() < self.epsilon:
-                # Epsilon-greedy: 随机选择动作和参数
-                action_probs = np.random.dirichlet(np.ones(3))  # 随机概率分布
+                action_probs = np.random.dirichlet(np.ones(3))
                 action_params = np.random.uniform(-1, 1, self.action_param_size)
             else:
-                # 添加OU噪声到参数
                 action_params = action_params + self.noise() * 0.1
                 action_params = np.clip(action_params, -1, 1)
         
-        # 使用动作投影函数
         if self.use_action_projection:
             action, act_param, timing_info = self.action_projector.project(
                 action_probs, action_params, record_timing=True
             )
         else:
-            # 不使用投影，直接选择
             action = np.argmax(action_probs)
-            # 根据选择的动作提取对应的参数
             act_param = np.clip(action_params[action:action+1], -1, 1)
         
         return action, act_param, action_probs, action_params
     
     def step(self, state, action_probs, action_params, reward, next_state, done):
-        """存储经验并学习"""
-        # 合并动作表示
+        """Store experience and learn"""
         combined_action = np.concatenate([action_probs, action_params])
         self.memory.put((state, combined_action, reward, next_state, done))
     
     def learn(self):
-        """从经验中学习"""
+        """Learn from experience"""
         if self.memory.size() < self.batch_size:
             return
         
         states, actions, rewards, next_states, dones = self.memory.sample(self.batch_size)
         
-        # 分离动作概率和参数
         action_probs = actions[:, :3]
         action_params = actions[:, 3:]
         
-        # 更新Critic
         with torch.no_grad():
             next_action_probs, next_action_params = self.mu_target(next_states)
             target_q = self.q_target(next_states, next_action_probs, next_action_params)
@@ -559,7 +511,6 @@ class LIRLAgent:
         q_loss.backward()
         self.q_optimizer.step()
         
-        # 更新Actor
         pred_action_probs, pred_action_params = self.mu(states)
         actor_loss = -self.q(states, pred_action_probs, pred_action_params).mean()
         
@@ -567,41 +518,40 @@ class LIRLAgent:
         actor_loss.backward()
         self.mu_optimizer.step()
         
-        # 软更新目标网络
         self._soft_update(self.mu, self.mu_target)
         self._soft_update(self.q, self.q_target)
     
     def _soft_update(self, source, target):
-        """软更新目标网络"""
+        """Soft update target network"""
         for target_param, param in zip(target.parameters(), source.parameters()):
             target_param.data.copy_(self.tau * param.data + (1.0 - self.tau) * target_param.data)
     
     def decay_epsilon(self):
-        """衰减epsilon"""
+        """Decay epsilon"""
         self.epsilon = max(self.epsilon_final, self.epsilon * self.epsilon_decay)
     
     def reset_noise(self):
-        """重置噪声"""
+        """Reset noise"""
         self.noise.reset()
     
     def start_episode(self):
-        """开始新的episode"""
+        """Start new episode"""
         self.reset_noise()
     
     def end_episode(self):
-        """结束episode"""
+        """End episode"""
         self.decay_epsilon()
     
     def get_projection_stats(self):
-        """获取动作投影的统计信息"""
+        """Get action projection statistics"""
         return self.action_projector.get_timing_statistics()
     
     def print_projection_summary(self):
-        """打印动作投影的统计摘要"""
+        """Print action projection summary"""
         self.action_projector.print_timing_summary()
     
     def save_models(self, prefix):
-        """保存模型"""
+        """Save models"""
         torch.save(self.mu.state_dict(), '{}_mu.pth'.format(prefix))
         torch.save(self.q.state_dict(), '{}_q.pth'.format(prefix))
     
@@ -618,14 +568,14 @@ class LIRLAgent:
 
 
 def pad_action(act, act_param):
-    """将动作转换为环境需要的格式"""
+    """Convert action to format required by environment"""
     params = [np.zeros((1,), dtype=np.float32), np.zeros((1,), dtype=np.float32), np.zeros((1,), dtype=np.float32)]
     params[act][:] = act_param
     return (act, params)
 
 
 def evaluate(env, agent, episodes=1000):
-    """评估agent"""
+    """Evaluate agent"""
     returns = []
     timesteps = []
     for _ in range(episodes):
@@ -676,10 +626,8 @@ def run(seed, episodes, evaluation_episodes, batch_size, gamma, initial_memory_t
     if visualise:
         assert render_freq > 0
     
-    # 创建环境
     env = gym.make('Platform-v0')
     
-    # 记录初始参数用于初始化
     initial_params_ = [3., 10., 400.]
     if scale_actions:
         for a in range(env.action_space.spaces[0].n):
@@ -691,27 +639,23 @@ def run(seed, episodes, evaluation_episodes, batch_size, gamma, initial_memory_t
     if scale_actions:
         env = ScaledParameterisedActionWrapper(env)
     
-    # 创建保存目录
     dir = os.path.join(save_dir, title)
     env = Monitor(env, directory=os.path.join(dir, str(seed)), video_callable=False, write_upon_reset=False, force=True)
     
     print(env.action_space)
     print(env.observation_space)
     
-    # 设置随机种子
     env.seed(seed)
     np.random.seed(seed)
     random.seed(seed)
     torch.manual_seed(seed)
     
-    # 获取状态和动作空间大小
     state_size = env.observation_space.spaces[0].shape[0]
-    action_param_size = 3  # run(1) + hop(1) + leap(1)
+    action_param_size = 3
     
     print(f"State size: {state_size}")
     print(f"Action param size: {action_param_size}")
     
-    # 创建agent
     agent = LIRLAgent(
         state_size=state_size,
         action_param_size=action_param_size,
@@ -748,19 +692,15 @@ def run(seed, episodes, evaluation_episodes, batch_size, gamma, initial_memory_t
         episode_reward = 0.
         
         for j in range(max_steps):
-            # 选择动作
             act, act_param, action_probs, action_params = agent.act(state)
             action = pad_action(act, act_param)
             
-            # 执行动作
             ret = env.step(action)
             (next_state, steps), reward, terminal, _ = ret
             next_state = np.array(next_state, dtype=np.float32, copy=False)
             
-            # 存储经验
             agent.step(state, action_probs, action_params, reward, next_state, terminal)
             
-            # 学习
             if agent.memory.size() >= initial_memory_threshold:
                 agent.learn()
             
@@ -791,25 +731,21 @@ def run(seed, episodes, evaluation_episodes, batch_size, gamma, initial_memory_t
     
     print(agent)
     
-    # 打印动作投影统计信息
     if use_action_projection:
         agent.print_projection_summary()
     
-    # 保存结果
     returns = env.get_episode_rewards()
     print("Ave. return =", sum(returns) / len(returns))
     print("Ave. last 100 episode return =", sum(returns[-100:]) / 100.)
     
     np.save(os.path.join(dir, title + "{}".format(str(seed))), returns)
     
-    # 保存模型
     torch.save(agent.mu.state_dict(), os.path.join(dir, 'mu_{}.pth'.format(seed)))
     torch.save(agent.q.state_dict(), os.path.join(dir, 'q_{}.pth'.format(seed)))
     
-    # 评估
     if evaluation_episodes > 0:
         print("Evaluating agent over {} episodes".format(evaluation_episodes))
-        agent.epsilon = 0.  # 关闭探索
+        agent.epsilon = 0.
         evaluation_returns = evaluate(env, agent, evaluation_episodes)
         print("Ave. evaluation return =", sum(evaluation_returns) / len(evaluation_returns))
         np.save(os.path.join(dir, title + "{}e".format(str(seed))), evaluation_returns)

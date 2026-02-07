@@ -1,11 +1,11 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """
-LIRL Agent for Soccer Environment - 优化版本
-=============================================
-核心特性：
-1. LIRL动作投影：匈牙利算法选择离散动作 + QP投影连续参数
-2. Multipass Q网络：对每个动作单独计算Q值（来自PDQN的核心优势）
+LIRL Agent for Soccer Environment - Optimized Version
+======================================================
+Key Features:
+1. LIRL Action Projection: Hungarian algorithm for discrete action selection + QP projection for continuous parameters
+2. Multipass Q Network: Compute Q-values separately for each action (core advantage from PDQN)
 3. N-step returns + Inverting Gradients
 """
 
@@ -30,7 +30,7 @@ from agents.memory.memory import MemoryNStepReturns
 from agents.utils import soft_update_target_network, hard_update_target_network
 from agents.utils.noise import OrnsteinUhlenbeckActionNoise
 
-# 尝试导入scipy用于LIRL动作投影
+# Try importing scipy for LIRL action projection
 try:
     from scipy.optimize import minimize, linear_sum_assignment
     SCIPY_AVAILABLE = True
@@ -42,15 +42,15 @@ device = torch.device("cpu")
 
 
 # =======================
-# LIRL动作投影
+# LIRL Action Projection
 # =======================
 class LIRLActionProjection:
     """
-    LIRL动作投影：将网络输出投影到有效的离散-连续混合动作空间
+    LIRL Action Projection: Project network output to valid discrete-continuous mixed action space
     
-    核心方法：
-    1. 离散动作选择：匈牙利算法（最小化代价矩阵）
-    2. 连续参数投影：QP求解（投影到可行域）
+    Core methods:
+    1. Discrete action selection: Hungarian algorithm (minimize cost matrix)
+    2. Continuous parameter projection: QP solving (project to feasible region)
     """
     
     def __init__(self, num_actions, action_parameter_sizes, param_min, param_max):
@@ -62,20 +62,18 @@ class LIRLActionProjection:
     
     def project(self, action_scores, action_parameters):
         """
-        LIRL动作投影
+        LIRL action projection
         
         Args:
-            action_scores: 离散动作的分数 [num_actions]
-            action_parameters: 连续动作参数 [total_param_size]
+            action_scores: Discrete action scores [num_actions]
+            action_parameters: Continuous action parameters [total_param_size]
         
         Returns:
-            action: 选择的离散动作
-            action_params: 投影后的连续参数
+            action: Selected discrete action
+            action_params: Projected continuous parameters
         """
-        # 1. 离散动作选择 - 使用匈牙利算法
         action = self._hungarian_select(action_scores)
         
-        # 2. 连续参数投影 - 使用QP
         start_idx = self.offsets[action]
         end_idx = self.offsets[action + 1]
         params = action_parameters[start_idx:end_idx]
@@ -84,19 +82,17 @@ class LIRLActionProjection:
         return action, projected_params
     
     def _hungarian_select(self, action_scores):
-        """使用匈牙利算法选择离散动作"""
-        # 构建代价矩阵：代价 = -分数（最大化分数 = 最小化负分数）
+        """Select discrete action using Hungarian algorithm"""
         cost_matrix = -action_scores.reshape(1, -1)
         
         if SCIPY_AVAILABLE:
             _, col_ind = linear_sum_assignment(cost_matrix)
             return col_ind[0]
         else:
-            # Fallback: argmax
             return np.argmax(action_scores)
     
     def _qp_project(self, params, start_idx, end_idx):
-        """使用QP将参数投影到可行域 [min, max]"""
+        """Project parameters to feasible region [min, max] using QP"""
         param_min = self.param_min[start_idx:end_idx]
         param_max = self.param_max[start_idx:end_idx]
         
@@ -124,14 +120,14 @@ class LIRLActionProjection:
 
 
 # =======================
-# Multipass Q网络（来自PDQN的核心优势）
+# Multipass Q Network (Core advantage from PDQN)
 # =======================
 class MultiPassQNetwork(nn.Module):
     """
-    Multipass Q网络：对每个动作单独计算Q值
+    Multipass Q Network: Compute Q-values separately for each action
     
-    关键：对于动作a，只使用动作a对应的参数，其他参数置零
-    这大大减少了不相关参数的干扰
+    Key: For action a, only use parameters corresponding to action a, set others to zero
+    This greatly reduces interference from irrelevant parameters
     """
     
     def __init__(self, state_size, action_size, action_parameter_size_list, hidden_layers=None,
@@ -143,7 +139,6 @@ class MultiPassQNetwork(nn.Module):
         self.action_parameter_size = sum(action_parameter_size_list)
         self.activation = activation
         
-        # 构建网络
         self.layers = nn.ModuleList()
         input_size = state_size + self.action_parameter_size
         last_hidden_size = input_size
@@ -157,7 +152,6 @@ class MultiPassQNetwork(nn.Module):
         
         self.layers.append(nn.Linear(last_hidden_size, action_size))
         
-        # 初始化
         for i in range(len(self.layers) - 1):
             if init_type == "kaiming":
                 nn.init.kaiming_normal_(self.layers[i].weight, nonlinearity='leaky_relu')
@@ -167,17 +161,15 @@ class MultiPassQNetwork(nn.Module):
             nn.init.normal_(self.layers[-1].weight, mean=0., std=init_std)
         nn.init.zeros_(self.layers[-1].bias)
         
-        # 计算偏移量
         self.offsets = np.cumsum([0] + list(action_parameter_size_list))
     
     def forward(self, state, action_parameters):
         """
-        Multipass前向传播：对每个动作单独计算Q值
+        Multipass forward pass: Compute Q-values separately for each action
         """
         batch_size = state.shape[0]
         Q = []
         
-        # 对每个动作，只填充对应的参数，其他置零
         x = torch.cat((state, torch.zeros_like(action_parameters)), dim=1)
         x = x.repeat(self.action_size, 1)
         
@@ -186,7 +178,6 @@ class MultiPassQNetwork(nn.Module):
               self.state_size + self.offsets[a]:self.state_size + self.offsets[a + 1]] = \
                 action_parameters[:, self.offsets[a]:self.offsets[a + 1]]
         
-        # 前向传播
         negative_slope = 0.01
         for i in range(len(self.layers) - 1):
             if self.activation == "leaky_relu":
@@ -196,7 +187,6 @@ class MultiPassQNetwork(nn.Module):
         
         Qall = self.layers[-1](x)
         
-        # 提取每个动作的Q值
         for a in range(self.action_size):
             Qa = Qall[a * batch_size:(a + 1) * batch_size, a]
             if len(Qa.shape) == 1:
@@ -207,7 +197,7 @@ class MultiPassQNetwork(nn.Module):
 
 
 class ParamActor(nn.Module):
-    """参数Actor网络 - 输出动作参数"""
+    """Parameter Actor Network - Outputs action parameters"""
     
     def __init__(self, state_size, action_size, action_parameter_size, hidden_layers=None,
                  init_type="kaiming", init_std=0.01, activation="leaky_relu"):
@@ -229,7 +219,6 @@ class ParamActor(nn.Module):
         
         self.layers.append(nn.Linear(last_hidden_size, action_parameter_size))
         
-        # Passthrough layer（残差连接）
         self.passthrough_layer = nn.Linear(state_size, action_parameter_size)
         nn.init.zeros_(self.passthrough_layer.weight)
         nn.init.zeros_(self.passthrough_layer.bias)
@@ -237,7 +226,6 @@ class ParamActor(nn.Module):
         self.passthrough_layer.weight.requires_grad = False
         self.passthrough_layer.bias.requires_grad = False
         
-        # 初始化
         for i in range(len(self.layers) - 1):
             if init_type == "kaiming":
                 nn.init.kaiming_normal_(self.layers[i].weight, nonlinearity='leaky_relu')
@@ -268,11 +256,11 @@ class ParamActor(nn.Module):
 # =======================
 class LIRLAgent:
     """
-    LIRL Agent - 优化版本
+    LIRL Agent - Optimized Version
     
-    核心特性：
-    1. LIRL动作投影（匈牙利算法 + QP）
-    2. Multipass Q网络（来自PDQN）
+    Core Features:
+    1. LIRL Action Projection (Hungarian algorithm + QP)
+    2. Multipass Q Network (from PDQN)
     3. N-step returns + Inverting Gradients
     """
     
@@ -292,7 +280,6 @@ class LIRLAgent:
         self.action_parameter_sizes = np.array([action_space.spaces[i].shape[0] for i in range(1, self.num_actions + 1)])
         self.action_parameter_size = int(self.action_parameter_sizes.sum())
         
-        # 动作范围
         self.action_parameter_max_numpy = np.concatenate([action_space.spaces[i].high for i in range(1, self.num_actions + 1)]).ravel()
         self.action_parameter_min_numpy = np.concatenate([action_space.spaces[i].low for i in range(1, self.num_actions + 1)]).ravel()
         self.action_parameter_range_numpy = (self.action_parameter_max_numpy - self.action_parameter_min_numpy)
@@ -320,7 +307,6 @@ class LIRLAgent:
         self._step = 0
         self._episode = 0
         
-        # 随机种子
         self.seed = seed
         self.np_random = np.random.RandomState(seed=seed)
         if seed is not None:
@@ -328,27 +314,22 @@ class LIRLAgent:
             np.random.seed(seed)
             torch.manual_seed(seed)
         
-        # LIRL动作投影
         self.action_projector = LIRLActionProjection(
             self.num_actions, self.action_parameter_sizes,
             self.action_parameter_min_numpy, self.action_parameter_max_numpy
         )
         
-        # 噪声
         self.use_ornstein_noise = use_ornstein_noise
         self.noise = OrnsteinUhlenbeckActionNoise(self.action_parameter_size, random_machine=self.np_random)
         
-        # 经验回放
         self.replay_memory = MemoryNStepReturns(
             replay_memory_size, observation_space.shape,
-            (1 + self.action_parameter_size,),  # action index + parameters
+            (1 + self.action_parameter_size,),
             next_actions=False, n_step_returns=n_step_returns
         )
         
-        # 网络
         state_size = observation_space.shape[0]
         
-        # Multipass Q网络（Actor in PDQN terminology）
         self.actor = MultiPassQNetwork(
             state_size, self.num_actions, self.action_parameter_sizes,
             hidden_layers=hidden_layers, init_type="kaiming", activation="leaky_relu"
@@ -360,7 +341,6 @@ class LIRLAgent:
         hard_update_target_network(self.actor, self.actor_target)
         self.actor_target.eval()
         
-        # 参数网络
         self.actor_param = ParamActor(
             state_size, self.num_actions, self.action_parameter_size,
             hidden_layers=hidden_layers, init_type="kaiming", activation="leaky_relu"
@@ -372,7 +352,6 @@ class LIRLAgent:
         hard_update_target_network(self.actor_param, self.actor_param_target)
         self.actor_param_target.eval()
         
-        # 优化器
         self.actor_optimiser = optim.Adam(self.actor.parameters(), lr=learning_rate_actor)
         self.actor_param_optimiser = optim.Adam(self.actor_param.parameters(), lr=learning_rate_actor_param)
         
@@ -407,7 +386,7 @@ class LIRLAgent:
         return grad
 
     def act(self, state):
-        """选择动作 - 使用LIRL动作投影"""
+        """Select action - using LIRL action projection"""
         with torch.no_grad():
             state_tensor = torch.from_numpy(state).to(device)
             if len(state_tensor.shape) == 1:
@@ -416,11 +395,9 @@ class LIRLAgent:
             all_action_parameters = self.actor_param.forward(state_tensor)
             all_action_parameters = all_action_parameters.detach().cpu().data.numpy().squeeze()
             
-            # 获取Q值作为动作分数
             Q_values = self.actor.forward(state_tensor, torch.from_numpy(all_action_parameters).unsqueeze(0).to(device))
             action_scores = Q_values.detach().cpu().data.numpy().squeeze()
             
-            # Epsilon-greedy探索
             if self.np_random.uniform() < self.epsilon:
                 action_scores = self.np_random.uniform(size=action_scores.shape)
                 offsets = np.cumsum([0] + list(self.action_parameter_sizes))
@@ -430,7 +407,6 @@ class LIRLAgent:
                             self.action_parameter_min_numpy[offsets[i]:offsets[i + 1]],
                             self.action_parameter_max_numpy[offsets[i]:offsets[i + 1]])
             
-            # LIRL动作投影：匈牙利算法 + QP
             action, action_parameters = self.action_projector.project(action_scores, all_action_parameters)
             
             if self.use_ornstein_noise and self.noise is not None:
@@ -453,12 +429,11 @@ class LIRLAgent:
             self.epsilon = self.epsilon_final
 
     def _optimize_td_loss(self):
-        """优化TD损失"""
+        """Optimize TD loss"""
         if self.replay_memory.nb_entries < self.batch_size or \
                 self.replay_memory.nb_entries < self.initial_memory_threshold:
             return
         
-        # 采样
         if self.n_step_returns:
             states, actions, rewards, next_states, terminals, n_step_returns = \
                 self.replay_memory.sample(self.batch_size, random_machine=self.np_random)
@@ -477,7 +452,6 @@ class LIRLAgent:
         if self.n_step_returns:
             n_step_returns = torch.from_numpy(n_step_returns).to(device)
         
-        # 优化Q网络
         with torch.no_grad():
             pred_next_action_parameters = self.actor_param_target.forward(next_states)
             pred_Q_a = self.actor_target(next_states, pred_next_action_parameters)
@@ -500,7 +474,6 @@ class LIRLAgent:
             torch.nn.utils.clip_grad_norm_(self.actor.parameters(), self.clip_grad)
         self.actor_optimiser.step()
         
-        # 优化参数网络
         with torch.no_grad():
             action_params = self.actor_param(states)
         action_params.requires_grad = True

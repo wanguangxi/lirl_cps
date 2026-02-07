@@ -3,18 +3,6 @@
 """
 LIRL Runtime Scaling Experiment
 ================================
-实验目的：测试LIRL算法在不同规模下的运行时间性能
-
-实验设置：
-1) num_of_jobs=100, num_of_robots=5    (小规模)
-2) num_of_jobs=100, num_of_robots=50   (中规模)
-3) num_of_jobs=1000, num_of_robots=500 (大规模)
-
-测试指标：
-- 策略网络前向推理时间
-- 匈牙利算法执行时间
-- QP求解时间
-- 总决策时间
 """
 
 import random
@@ -33,7 +21,6 @@ import json
 import matplotlib.pyplot as plt
 from scipy.optimize import linear_sum_assignment, minimize
 
-# 添加环境路径
 sys.path.append(os.path.join(os.path.dirname(__file__), '../env'))
 try:
     import importlib
@@ -45,7 +32,7 @@ except Exception:
 
 
 # =======================
-# 实验配置
+# Experiment Configuration
 # =======================
 EXPERIMENT_CONFIGS = {
     'small': {
@@ -65,7 +52,7 @@ EXPERIMENT_CONFIGS = {
     }
 }
 
-# 基础训练配置
+# Base training configuration
 BASE_CONFIG = {
     # Learning parameters
     'lr_mu': 0.0005,
@@ -97,12 +84,12 @@ BASE_CONFIG = {
     'print_interval': 20,
     'save_models': True,
     
-    # 大规模优化参数
-    'use_fast_action_selection': True,  # 大规模时使用快速动作选择
-    'max_steps_per_episode': None,      # 限制每episode最大步数（None表示不限制）
+    # Large-scale optimization parameters
+    'use_fast_action_selection': True,
+    'max_steps_per_episode': None,
 }
 
-# 针对不同规模的优化配置
+# Scale-specific optimization configuration
 SCALE_SPECIFIC_CONFIG = {
     'small': {
         'training_iterations': 20,
@@ -115,34 +102,34 @@ SCALE_SPECIFIC_CONFIG = {
         'use_fast_action_selection': False,
     },
     'large': {
-        'training_iterations': 20,           # 减少训练迭代
-        'max_steps_per_episode': None,       # 限制每episode步数
-        'use_fast_action_selection': False,  # 使用top-k匈牙利算法
-        'max_hungarian_size': 1000,            # 限制匈牙利算法规模为top-50
+        'training_iterations': 20,
+        'max_steps_per_episode': None,
+        'use_fast_action_selection': False,
+        'max_hungarian_size': 1000,
     }
 }
 
-# 运行时间测试配置
+# Runtime testing configuration
 TIMING_CONFIG = {
-    'num_timing_episodes': 5,      # 测试的episode数
-    'warmup_steps': 10,            # 预热步数（不计入统计）
+    'num_timing_episodes': 5,
+    'warmup_steps': 10,
 }
 
 
 # =======================
-# GPU设备配置
+# GPU Device Configuration
 # =======================
 DEVICE = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 def get_device():
-    """获取当前设备"""
+    """Get current device"""
     return DEVICE
 
 # =======================
-# 神经网络定义
+# Neural Network Definitions
 # =======================
 class ReplayBuffer():
-    """经验回放缓冲区 - 优化GPU传输"""
+    """Experience replay buffer - optimized for GPU transfer"""
     def __init__(self, buffer_limit, device=None):
         self.buffer = collections.deque(maxlen=buffer_limit)
         self.device = device if device else DEVICE
@@ -151,21 +138,18 @@ class ReplayBuffer():
         self.buffer.append(transition)
         
     def sample(self, n):
-        # 安全检查：确保不会采样超过buffer大小
         actual_n = min(n, len(self.buffer))
         if actual_n <= 0:
             raise ValueError(f"Buffer is empty or n={n} is invalid")
         
         mini_batch = random.sample(self.buffer, actual_n)
         
-        # 使用numpy预分配数组，避免多次append
         s_arr = np.array([t[0] for t in mini_batch], dtype=np.float32)
         a_arr = np.array([t[1] for t in mini_batch], dtype=np.float32)
         r_arr = np.array([t[2] for t in mini_batch], dtype=np.float32)
         s_prime_arr = np.array([t[3] for t in mini_batch], dtype=np.float32)
         done_arr = np.array([[0.0 if t[4] else 1.0] for t in mini_batch], dtype=np.float32)
         
-        # 直接转换到GPU（一次性传输）
         s_tensor = torch.from_numpy(s_arr).to(self.device)
         a_tensor = torch.from_numpy(a_arr).to(self.device)
         r_tensor = torch.from_numpy(r_arr).to(self.device)
@@ -226,33 +210,29 @@ class OrnsteinUhlenbeckNoise:
 
 
 # =======================
-# 动作投影函数（带计时功能）
+# Action Projection Functions (with timing)
 # =======================
 class ActionProjectionWithTiming:
-    """带计时功能的动作投影类"""
+    """Action projection class with timing functionality"""
     
     def __init__(self):
         self.reset_timings()
     
     def reset_timings(self):
-        """重置计时器"""
+        """Reset timers"""
         self.hungarian_times = []
         self.qp_times = []
         self.total_projection_times = []
     
     def get_valid_jobs_and_robots(self, env):
-        """获取有效的作业和机器人 - 优化版本"""
-        # 使用numpy加速
+        """Get valid jobs and robots - optimized version"""
         valid_robots = np.where(env.robot_state == 1)[0].tolist()
         
-        # 优化：使用task_state数组快速判断
-        # task_state: 每5个元素对应一个job的5个操作
         valid_jobs = []
         task_state = env.task_state
         num_jobs = env.num_of_jobs
         
         for job_id in range(num_jobs):
-            # 检查该job的5个操作是否全部完成
             start_idx = job_id * 5
             end_idx = start_idx + 5
             if not np.all(task_state[start_idx:end_idx] == 1):
@@ -262,8 +242,8 @@ class ActionProjectionWithTiming:
     
     def fast_action_selection(self, env, a_):
         """
-        快速动作选择 - 跳过匈牙利算法，使用贪心策略
-        适用于大规模问题，牺牲一点最优性换取速度
+        Fast action selection - skip Hungarian algorithm, use greedy strategy
+        Suitable for large-scale problems, trade a bit of optimality for speed
         """
         valid_jobs, valid_robots = self.get_valid_jobs_and_robots(env)
         
@@ -273,45 +253,37 @@ class ActionProjectionWithTiming:
         job_preference = a_[0]
         robot_preference = a_[1]
         
-        # 直接根据网络输出选择最接近的job和robot
         num_jobs = len(env.task_set)
         num_robots = len(env.robot_state)
         
-        # 计算目标索引
         target_job = int(job_preference * num_jobs)
         target_robot = int(robot_preference * num_robots)
         
-        # 在有效集合中找最接近的
         job_id = min(valid_jobs, key=lambda x: abs(x - target_job))
         robot_id = min(valid_robots, key=lambda x: abs(x - target_robot))
         
-        # 连续参数直接clip
         param = float(np.clip(a_[2] if len(a_) > 2 else 0.0, 0.0, 1.0))
         
         return [job_id, robot_id, param]
     
     def build_cost_matrix(self, env, valid_jobs, valid_robots, a_):
-        """构建代价矩阵 - 优化版本，使用向量化操作"""
+        """Build cost matrix - optimized version using vectorized operations"""
         job_preference = a_[0]
         robot_preference = a_[1]
         
         n_jobs = len(valid_jobs)
         n_robots = len(valid_robots)
         
-        # 大规模时使用简化的代价计算（仅基于偏好）
         if n_jobs * n_robots > 10000:
-            # 向量化计算偏好代价
             job_indices = np.array(valid_jobs)
             robot_indices = np.array(valid_robots)
             
             job_costs = np.abs(job_preference - job_indices / len(env.task_set))
             robot_costs = np.abs(robot_preference - robot_indices / len(env.robot_state))
             
-            # 广播计算代价矩阵
             cost_matrix = job_costs[:, np.newaxis] + robot_costs[np.newaxis, :]
             return cost_matrix
         
-        # 小规模时使用完整的代价计算
         cost_matrix = np.zeros((n_jobs, n_robots))
         
         for i, job_id in enumerate(valid_jobs):
@@ -345,7 +317,7 @@ class ActionProjectionWithTiming:
         return cost_matrix
     
     def solve_hungarian(self, cost_matrix):
-        """使用匈牙利算法求解最优分配（带计时）"""
+        """Solve optimal assignment using Hungarian algorithm (with timing)"""
         start_time = time.perf_counter()
         row_ind, col_ind = linear_sum_assignment(cost_matrix)
         hungarian_time = time.perf_counter() - start_time
@@ -353,7 +325,7 @@ class ActionProjectionWithTiming:
         return row_ind, col_ind, hungarian_time
     
     def solve_qp(self, v, A, b):
-        """求解二次规划问题（带计时）"""
+        """Solve quadratic programming problem (with timing)"""
         start_time = time.perf_counter()
         
         try:
@@ -390,21 +362,20 @@ class ActionProjectionWithTiming:
     
     def project(self, env, a, record_timing=True, max_hungarian_size=100):
         """
-        执行动作投影（带完整计时）
+        Execute action projection (with full timing)
         
         Args:
-            env: 环境对象
-            a: 动作向量
-            record_timing: 是否记录时间
-            max_hungarian_size: 匈牙利算法的最大规模限制（用于加速大规模问题）
+            env: Environment object
+            a: Action vector
+            record_timing: Whether to record timing
+            max_hungarian_size: Maximum size limit for Hungarian algorithm (for accelerating large-scale problems)
         
-        返回: [job_id, robot_id, param], timing_info
+        Returns: [job_id, robot_id, param], timing_info
         """
         total_start = time.perf_counter()
         
         a_ = a.detach().cpu().numpy()
         
-        # 获取有效作业和机器人
         valid_jobs, valid_robots = self.get_valid_jobs_and_robots(env)
         
         if len(valid_jobs) == 0 or len(valid_robots) == 0:
@@ -420,13 +391,10 @@ class ActionProjectionWithTiming:
         job_preference = a_[0]
         robot_preference = a_[1]
         
-        # 大规模优化：限制参与匈牙利算法的规模
         if len(valid_jobs) > max_hungarian_size or len(valid_robots) > max_hungarian_size:
-            # 基于偏好选择top-k的作业和机器人
             job_scores = [abs(job_preference - (j / len(env.task_set))) for j in valid_jobs]
             robot_scores = [abs(robot_preference - (r / len(env.robot_state))) for r in valid_robots]
             
-            # 选择偏好分数最低的（最接近网络输出的）
             k_jobs = min(max_hungarian_size, len(valid_jobs))
             k_robots = min(max_hungarian_size, len(valid_robots))
             
@@ -439,13 +407,10 @@ class ActionProjectionWithTiming:
             selected_jobs = valid_jobs
             selected_robots = valid_robots
         
-        # 构建代价矩阵
         cost_matrix = self.build_cost_matrix(env, selected_jobs, selected_robots, a_)
         
-        # 匈牙利算法
         row_ind, col_ind, hungarian_time = self.solve_hungarian(cost_matrix)
         
-        # 选择分配结果
         if len(row_ind) > 0:
             job_id = selected_jobs[row_ind[0]]
             robot_id = selected_robots[col_ind[0]]
@@ -453,7 +418,6 @@ class ActionProjectionWithTiming:
             job_id = selected_jobs[0]
             robot_id = selected_robots[0]
         
-        # QP求解连续参数
         qp_time = 0.0
         if len(a_) > 2:
             v = a_[2:]
@@ -477,7 +441,7 @@ class ActionProjectionWithTiming:
         return [job_id, robot_id, param], timing_info
     
     def get_timing_statistics(self):
-        """获取计时统计信息"""
+        """Get timing statistics"""
         stats = {}
         
         if self.hungarian_times:
@@ -514,17 +478,14 @@ class ActionProjectionWithTiming:
 
 
 # =======================
-# 训练函数
+# Training Functions
 # =======================
 def train_step(mu, mu_target, q, q_target, memory, q_optimizer, mu_optimizer, config, device='cpu', scaler=None):
-    """单步训练 - GPU优化版本，支持混合精度"""
-    # 数据已经在GPU上（由ReplayBuffer处理）
+    """Single training step - GPU optimized version with mixed precision support"""
     s, a, r, s_prime, done_mask = memory.sample(config['batch_size'])
     
-    # 是否使用混合精度
     use_amp = scaler is not None and device.type == 'cuda'
     
-    # Critic更新
     with torch.no_grad():
         next_action = mu_target(s_prime)
         target_q = q_target(s_prime, next_action)
@@ -539,7 +500,6 @@ def train_step(mu, mu_target, q, q_target, memory, q_optimizer, mu_optimizer, co
         scaler.scale(q_loss).backward()
         scaler.step(q_optimizer)
         
-        # Actor更新
         with torch.amp.autocast('cuda'):
             mu_loss = -q(s, mu(s)).mean()
         
@@ -564,23 +524,22 @@ def train_step(mu, mu_target, q, q_target, memory, q_optimizer, mu_optimizer, co
 
 
 def soft_update(net, net_target, tau):
-    """软更新目标网络"""
+    """Soft update target network"""
     for param_target, param in zip(net_target.parameters(), net.parameters()):
         param_target.data.copy_(param_target.data * (1.0 - tau) + param.data * tau)
 
 
 def train_policy(config, experiment_name):
     """
-    训练策略网络
+    Train policy network
     
     Args:
-        config: 训练配置
-        experiment_name: 实验名称 ('small', 'medium', 'large')
+        config: Training configuration
+        experiment_name: Experiment name ('small', 'medium', 'large')
     
     Returns:
-        训练好的模型和训练记录
+        Trained models and training records
     """
-    # 合并规模特定配置
     if experiment_name in SCALE_SPECIFIC_CONFIG:
         config = {**config, **SCALE_SPECIFIC_CONFIG[experiment_name]}
     
@@ -593,33 +552,28 @@ def train_policy(config, experiment_name):
     print(f"Training iterations: {config.get('training_iterations', 20)}")
     print(f"{'='*60}")
     
-    # 设置随机种子
     random.seed(config['seed'])
     np.random.seed(config['seed'])
     torch.manual_seed(config['seed'])
     
-    # 检测GPU并配置
     device = DEVICE
     print(f"Using device: {device}")
     
-    # 混合精度训练的GradScaler
     scaler = None
     if device.type == 'cuda':
         torch.cuda.manual_seed(config['seed'])
-        torch.backends.cudnn.benchmark = True  # 启用cudnn自动优化
-        scaler = torch.amp.GradScaler('cuda')  # 启用混合精度训练
+        torch.backends.cudnn.benchmark = True
+        scaler = torch.amp.GradScaler('cuda')
         print(f"GPU: {torch.cuda.get_device_name(0)}")
         print(f"GPU Memory: {torch.cuda.get_device_properties(0).total_memory / 1e9:.2f} GB")
         print(f"Mixed precision training: Enabled")
     
-    # 创建环境
     env = ENV.Env(config['num_of_jobs'], config['num_of_robots'], config['alpha'], config['beta'])
     state_size = len(env.state)
     action_size = len(env.action)
     
     print(f"State size: {state_size}, Action size: {action_size}")
     
-    # 初始化网络并移到GPU
     q = QNet(state_size, action_size, config).to(device)
     q_target = QNet(state_size, action_size, config).to(device)
     q_target.load_state_dict(q.state_dict())
@@ -628,50 +582,39 @@ def train_policy(config, experiment_name):
     mu_target = MuNet(state_size, action_size, config).to(device)
     mu_target.load_state_dict(mu.state_dict())
     
-    # 优化器
     mu_optimizer = optim.Adam(mu.parameters(), lr=config['lr_mu'])
     q_optimizer = optim.Adam(q.parameters(), lr=config['lr_q'])
     
-    # 训练组件 - 使用GPU加速的ReplayBuffer
     memory = ReplayBuffer(config['buffer_limit'], device=device)
     action_projector = ActionProjectionWithTiming()
     
-    # 配置参数
     use_fast_action = config.get('use_fast_action_selection', False)
     max_steps = config.get('max_steps_per_episode', None)
     training_iterations = config.get('training_iterations', 20)
     
-    # GPU优化：根据显存大小调整batch_size
     batch_size = config['batch_size']
     if device.type == 'cuda':
-        # 获取GPU显存大小（GB）
         gpu_memory_gb = torch.cuda.get_device_properties(0).total_memory / 1e9
         
-        # 根据显存大小和状态维度动态调整batch_size
-        if gpu_memory_gb >= 20:  # 大显存GPU (如TITAN RTX)
+        if gpu_memory_gb >= 20:
             batch_size = min(batch_size * 8, 2048)
         elif gpu_memory_gb >= 10:
             batch_size = min(batch_size * 4, 1024)
         else:
             batch_size = min(batch_size * 2, 512)
         
-        # 确保 memory_threshold 大于 batch_size
         memory_threshold = max(config['memory_threshold'], batch_size + 100)
         config = {**config, 'batch_size': batch_size, 'memory_threshold': memory_threshold}
         print(f"GPU batch size: {batch_size} (GPU memory: {gpu_memory_gb:.1f} GB)")
         print(f"Memory threshold: {memory_threshold}")
     
-    # 训练记录
     score_record = []
     
-    # 获取匈牙利算法规模限制
     max_hungarian_size = config.get('max_hungarian_size', 100)
     print(f"Max Hungarian size: {max_hungarian_size}")
     
-    # 预分配GPU张量用于推理（减少内存分配开销）
     s_buffer = torch.zeros(state_size, dtype=torch.float32, device=device)
     
-    # 训练循环
     training_start_time = time.time()
     
     for n_epi in range(config['num_of_episodes']):
@@ -681,15 +624,12 @@ def train_policy(config, experiment_name):
         step_count = 0
         
         while not done:
-            # 网络前向传播 - 优化版本
             with torch.no_grad():
-                # 直接复制到预分配的GPU缓冲区
                 s_buffer.copy_(torch.from_numpy(s.astype(np.float32)))
                 a = mu(s_buffer.unsqueeze(0)).squeeze(0)
                 a = torch.clamp(a, 0, 1)
                 a_np = a.cpu().numpy()
             
-            # 动作选择（根据配置使用快速或top-k匈牙利方法）
             if use_fast_action:
                 action = action_projector.fast_action_selection(env, a_np)
             else:
@@ -702,13 +642,11 @@ def train_policy(config, experiment_name):
             episode_reward += r
             step_count += 1
             
-            # 检查是否达到最大步数
             if max_steps is not None and step_count >= max_steps:
                 break
         
         score_record.append(episode_reward)
         
-        # 训练更新
         if memory.size() > config['memory_threshold']:
             for _ in range(training_iterations):
                 train_step(mu, mu_target, q, q_target, memory, q_optimizer, mu_optimizer, config, device, scaler)
@@ -740,43 +678,37 @@ def train_policy(config, experiment_name):
 
 
 # =======================
-# 运行时间测试函数
+# Runtime Testing Functions
 # =======================
 def test_runtime(config, mu, experiment_name):
     """
-    测试策略运行时间
+    Test policy runtime
     
     Args:
-        config: 配置
-        mu: 训练好的策略网络
-        experiment_name: 实验名称
+        config: Configuration
+        mu: Trained policy network
+        experiment_name: Experiment name
     
     Returns:
-        运行时间统计
+        Runtime statistics
     """
     print(f"\n{'='*60}")
     print(f"Testing Runtime for: {EXPERIMENT_CONFIGS[experiment_name]['name']}")
     print(f"Jobs: {config['num_of_jobs']}, Robots: {config['num_of_robots']}")
     print(f"{'='*60}")
     
-    # 设置评估模式
     mu.eval()
     
-    # 获取模型所在的设备
     device = next(mu.parameters()).device
     print(f"Model device: {device}")
     
-    # 创建环境
     env = ENV.Env(config['num_of_jobs'], config['num_of_robots'], config['alpha'], config['beta'])
     
-    # 创建带计时的动作投影器
     action_projector = ActionProjectionWithTiming()
     
-    # 记录网络前向传播时间
     network_forward_times = []
     total_decision_times = []
     
-    # 预热
     print(f"Warming up ({TIMING_CONFIG['warmup_steps']} steps)...")
     s = env.reset()
     for _ in range(TIMING_CONFIG['warmup_steps']):
@@ -792,10 +724,8 @@ def test_runtime(config, mu, experiment_name):
         else:
             s = s_prime
     
-    # 重置计时器
     action_projector.reset_timings()
     
-    # 正式测试
     print(f"Running timing tests ({TIMING_CONFIG['num_timing_episodes']} episodes)...")
     
     for episode in range(TIMING_CONFIG['num_timing_episodes']):
@@ -804,10 +734,8 @@ def test_runtime(config, mu, experiment_name):
         step = 0
         
         while not done:
-            # 总决策时间开始
             decision_start = time.perf_counter()
             
-            # 1. 网络前向传播计时
             network_start = time.perf_counter()
             with torch.no_grad():
                 s_tensor = torch.from_numpy(s.astype(np.float32)).to(device)
@@ -817,22 +745,18 @@ def test_runtime(config, mu, experiment_name):
             network_time = time.perf_counter() - network_start
             network_forward_times.append(network_time)
             
-            # 2. 动作投影（包含top-k匈牙利算法和QP）
             max_hungarian_size = config.get('max_hungarian_size', 100)
             action, timing_info = action_projector.project(env, torch.from_numpy(a_np), record_timing=True, max_hungarian_size=max_hungarian_size)
             
-            # 总决策时间
             total_decision_time = time.perf_counter() - decision_start
             total_decision_times.append(total_decision_time)
             
-            # 执行动作
             s_prime, _, done = env.step(action)
             s = s_prime
             step += 1
         
         print(f"  Episode {episode + 1}: {step} steps")
     
-    # 汇总统计
     projection_stats = action_projector.get_timing_statistics()
     
     timing_results = {
@@ -866,44 +790,43 @@ def test_runtime(config, mu, experiment_name):
 
 
 def print_timing_results(timing_results):
-    """打印运行时间结果"""
+    """Print runtime results"""
     print(f"\n{'='*70}")
     print(f"Runtime Results: {timing_results['config_name']}")
     print(f"Jobs: {timing_results['num_of_jobs']}, Robots: {timing_results['num_of_robots']}")
     print(f"{'='*70}")
     
-    print(f"\n1. 策略网络前向推理时间:")
+    print(f"\n1. Policy Network Forward Inference Time:")
     net = timing_results['network_forward']
-    print(f"   平均: {net['mean']*1000:.4f} ms")
-    print(f"   标准差: {net['std']*1000:.4f} ms")
-    print(f"   最小: {net['min']*1000:.4f} ms")
-    print(f"   最大: {net['max']*1000:.4f} ms")
+    print(f"   Mean: {net['mean']*1000:.4f} ms")
+    print(f"   Std: {net['std']*1000:.4f} ms")
+    print(f"   Min: {net['min']*1000:.4f} ms")
+    print(f"   Max: {net['max']*1000:.4f} ms")
     
-    print(f"\n2. 匈牙利算法执行时间:")
+    print(f"\n2. Hungarian Algorithm Execution Time:")
     hung = timing_results['hungarian']
     if hung:
-        print(f"   平均: {hung['mean']*1000:.4f} ms")
-        print(f"   标准差: {hung['std']*1000:.4f} ms")
-        print(f"   最小: {hung['min']*1000:.4f} ms")
-        print(f"   最大: {hung['max']*1000:.4f} ms")
+        print(f"   Mean: {hung['mean']*1000:.4f} ms")
+        print(f"   Std: {hung['std']*1000:.4f} ms")
+        print(f"   Min: {hung['min']*1000:.4f} ms")
+        print(f"   Max: {hung['max']*1000:.4f} ms")
     
-    print(f"\n3. QP求解时间:")
+    print(f"\n3. QP Solving Time:")
     qp = timing_results['qp']
     if qp:
-        print(f"   平均: {qp['mean']*1000:.4f} ms")
-        print(f"   标准差: {qp['std']*1000:.4f} ms")
-        print(f"   最小: {qp['min']*1000:.4f} ms")
-        print(f"   最大: {qp['max']*1000:.4f} ms")
+        print(f"   Mean: {qp['mean']*1000:.4f} ms")
+        print(f"   Std: {qp['std']*1000:.4f} ms")
+        print(f"   Min: {qp['min']*1000:.4f} ms")
+        print(f"   Max: {qp['max']*1000:.4f} ms")
     
-    print(f"\n4. 总决策时间:")
+    print(f"\n4. Total Decision Time:")
     total = timing_results['total_decision']
-    print(f"   平均: {total['mean']*1000:.4f} ms")
-    print(f"   标准差: {total['std']*1000:.4f} ms")
-    print(f"   最小: {total['min']*1000:.4f} ms")
-    print(f"   最大: {total['max']*1000:.4f} ms")
+    print(f"   Mean: {total['mean']*1000:.4f} ms")
+    print(f"   Std: {total['std']*1000:.4f} ms")
+    print(f"   Min: {total['min']*1000:.4f} ms")
+    print(f"   Max: {total['max']*1000:.4f} ms")
     
-    # 时间占比分析
-    print(f"\n5. 时间占比分析:")
+    print(f"\n5. Time Proportion Analysis:")
     total_mean = total['mean']
     if total_mean > 0:
         net_pct = (net['mean'] / total_mean) * 100
@@ -911,24 +834,22 @@ def print_timing_results(timing_results):
         qp_pct = (qp['mean'] / total_mean) * 100 if qp else 0
         other_pct = 100 - net_pct - hung_pct - qp_pct
         
-        print(f"   网络前向: {net_pct:.2f}%")
-        print(f"   匈牙利算法: {hung_pct:.2f}%")
-        print(f"   QP求解: {qp_pct:.2f}%")
-        print(f"   其他: {other_pct:.2f}%")
+        print(f"   Network Forward: {net_pct:.2f}%")
+        print(f"   Hungarian Algorithm: {hung_pct:.2f}%")
+        print(f"   QP Solving: {qp_pct:.2f}%")
+        print(f"   Other: {other_pct:.2f}%")
 
 
 def save_results(all_results, save_dir):
-    """保存所有实验结果"""
+    """Save all experiment results"""
     os.makedirs(save_dir, exist_ok=True)
     
-    # 保存JSON格式的结果
     results_json = {
         'timestamp': datetime.datetime.now().strftime("%Y%m%d_%H%M%S"),
         'experiments': {}
     }
     
     for exp_name, result in all_results.items():
-        # 保存模型
         model_dir = os.path.join(save_dir, exp_name)
         os.makedirs(model_dir, exist_ok=True)
         
@@ -937,11 +858,9 @@ def save_results(all_results, save_dir):
         torch.save(result['training']['q'].state_dict(), 
                    os.path.join(model_dir, 'q.pth'))
         
-        # 保存训练曲线
         np.save(os.path.join(model_dir, 'score_record.npy'), 
                 result['training']['score_record'])
         
-        # 添加到JSON结果
         timing = result['timing']
         results_json['experiments'][exp_name] = {
             'config': {
@@ -957,7 +876,6 @@ def save_results(all_results, save_dir):
             }
         }
     
-    # 保存JSON
     with open(os.path.join(save_dir, 'results_summary.json'), 'w') as f:
         json.dump(results_json, f, indent=2)
     
@@ -966,9 +884,8 @@ def save_results(all_results, save_dir):
 
 
 def plot_comparison(all_results, save_dir):
-    """绘制对比图"""
+    """Plot comparison charts"""
     
-    # 提取数据
     exp_names = list(all_results.keys())
     labels = [EXPERIMENT_CONFIGS[name]['name'] for name in exp_names]
     
@@ -984,13 +901,11 @@ def plot_comparison(all_results, save_dir):
         qp_times.append(timing['qp']['mean'] * 1000 if timing['qp'] else 0)
         total_times.append(timing['total_decision']['mean'] * 1000)
     
-    # 创建图表
     fig, axes = plt.subplots(2, 2, figsize=(14, 10))
     
     x = np.arange(len(labels))
     width = 0.6
     
-    # 1. 总决策时间对比
     ax1 = axes[0, 0]
     bars1 = ax1.bar(x, total_times, width, color=['#3498db', '#e74c3c', '#2ecc71'])
     ax1.set_ylabel('Time (ms)')
@@ -1000,7 +915,6 @@ def plot_comparison(all_results, save_dir):
     ax1.bar_label(bars1, fmt='%.2f')
     ax1.grid(axis='y', alpha=0.3)
     
-    # 2. 各组件时间堆叠图
     ax2 = axes[0, 1]
     bars_net = ax2.bar(x, network_times, width, label='Network Forward', color='#3498db')
     bars_hung = ax2.bar(x, hungarian_times, width, bottom=network_times, label='Hungarian', color='#e74c3c')
@@ -1014,7 +928,6 @@ def plot_comparison(all_results, save_dir):
     ax2.legend()
     ax2.grid(axis='y', alpha=0.3)
     
-    # 3. 匈牙利算法时间对比
     ax3 = axes[1, 0]
     bars3 = ax3.bar(x, hungarian_times, width, color=['#3498db', '#e74c3c', '#2ecc71'])
     ax3.set_ylabel('Time (ms)')
@@ -1024,12 +937,10 @@ def plot_comparison(all_results, save_dir):
     ax3.bar_label(bars3, fmt='%.2f')
     ax3.grid(axis='y', alpha=0.3)
     
-    # 4. 训练曲线对比
     ax4 = axes[1, 1]
     colors = ['#3498db', '#e74c3c', '#2ecc71']
     for i, name in enumerate(exp_names):
         scores = all_results[name]['training']['score_record']
-        # 平滑处理
         window = 10
         smoothed = np.convolve(scores, np.ones(window)/window, mode='valid')
         ax4.plot(smoothed, color=colors[i], label=labels[i], alpha=0.8)
@@ -1047,7 +958,7 @@ def plot_comparison(all_results, save_dir):
 
 
 def print_summary_table(all_results):
-    """打印汇总表格"""
+    """Print summary table"""
     print("\n" + "="*100)
     print("RUNTIME SCALING EXPERIMENT SUMMARY")
     print("="*100)
@@ -1068,7 +979,6 @@ def print_summary_table(all_results):
     
     print("="*100)
     
-    # 计算规模增长比
     if 'small' in all_results and 'large' in all_results:
         small_total = all_results['small']['timing']['total_decision']['mean']
         large_total = all_results['large']['timing']['total_decision']['mean']
@@ -1079,10 +989,10 @@ def print_summary_table(all_results):
 
 
 # =======================
-# 主函数
+# Main Function
 # =======================
 def main():
-    """主函数"""
+    """Main function"""
     print("="*80)
     print("LIRL Runtime Scaling Experiment")
     print("="*80)
@@ -1091,48 +1001,37 @@ def main():
         print(f"  {name}: {cfg['name']}")
     print("="*80)
     
-    # 创建保存目录
     timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
     save_dir = f"lirl_runtime_scaling_{timestamp}"
     
-    # 存储所有结果
     all_results = {}
     
-    # 对每种配置进行训练和测试
     for exp_name in ['small', 'medium', 'large']:
         print(f"\n\n{'#'*80}")
         print(f"# Experiment: {EXPERIMENT_CONFIGS[exp_name]['name']}")
         print(f"{'#'*80}")
         
-        # 合并配置（包括规模特定配置）
         config = BASE_CONFIG.copy()
         config.update(EXPERIMENT_CONFIGS[exp_name])
         if exp_name in SCALE_SPECIFIC_CONFIG:
             config.update(SCALE_SPECIFIC_CONFIG[exp_name])
         
-        # 训练策略
         training_result = train_policy(config, exp_name)
         
-        # 测试运行时间
         timing_result = test_runtime(config, training_result['mu'], exp_name)
         
-        # 打印结果
         print_timing_results(timing_result)
         
-        # 存储结果
         all_results[exp_name] = {
             'training': training_result,
             'timing': timing_result,
             'config': config
         }
     
-    # 打印汇总表格
     print_summary_table(all_results)
     
-    # 保存结果
     saved_dir = save_results(all_results, save_dir)
     
-    # 绘制对比图
     try:
         plot_comparison(all_results, saved_dir)
     except Exception as e:

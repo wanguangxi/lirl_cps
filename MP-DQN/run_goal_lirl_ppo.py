@@ -3,13 +3,13 @@
 """
 LIRL-PPO Agent for Goal Environment
 ====================================
-基于PPO算法实现的LIRL
+LIRL implementation based on PPO algorithm
 
-PPO (Proximal Policy Optimization) 特点:
-- On-policy算法
-- 使用clipped surrogate objective限制策略更新幅度
-- 更稳定的训练过程
-- 支持GAE (Generalized Advantage Estimation)
+PPO (Proximal Policy Optimization) features:
+- On-policy algorithm
+- Uses clipped surrogate objective to limit policy update magnitude
+- More stable training process
+- Supports GAE (Generalized Advantage Estimation)
 """
 
 import os
@@ -32,7 +32,7 @@ from common.wrappers import ScaledParameterisedActionWrapper
 from common.goal_domain import GoalFlattenedActionWrapper, GoalObservationWrapper
 from common.wrappers import ScaledStateWrapper
 
-# 尝试导入scipy
+# Try importing scipy
 try:
     from scipy.optimize import minimize, linear_sum_assignment
     SCIPY_AVAILABLE = True
@@ -42,18 +42,18 @@ except ImportError:
 
 
 # =======================
-# 设备配置
+# Device Configuration
 # =======================
 device = torch.device("cpu")
 
 
 # =======================
-# 动作投影函数 (与DDPG版本相同)
+# Action Projection Function (same as DDPG version)
 # =======================
 class ActionProjection:
     """
-    LIRL动作投影类
-    将网络输出的连续动作投影到有效的离散-连续混合动作空间
+    LIRL Action Projection Class
+    Projects network output continuous actions to valid discrete-continuous mixed action space
     """
     
     def __init__(self, action_space, use_qp=True):
@@ -144,22 +144,22 @@ class ActionProjection:
         stats = self.get_timing_statistics()
         if 'total_projection' in stats:
             tp = stats['total_projection']
-            print(f"动作投影平均时间: {tp['mean']*1000:.4f} ms, 调用次数: {tp['count']}")
+            print(f"Action projection average time: {tp['mean']*1000:.4f} ms, call count: {tp['count']}")
 
 
 # =======================
-# PPO网络定义
+# PPO Network Definition
 # =======================
 class ActorCritic(nn.Module):
     """
-    Actor-Critic网络 for PPO
+    Actor-Critic Network for PPO
     
-    Actor输出:
-    - 离散动作的概率分布 (Categorical)
-    - 连续参数的均值和标准差 (Gaussian)
+    Actor outputs:
+    - Discrete action probability distribution (Categorical)
+    - Continuous parameter mean and standard deviation (Gaussian)
     
-    Critic输出:
-    - 状态价值 V(s)
+    Critic outputs:
+    - State value V(s)
     """
     def __init__(self, state_size, action_param_size, hidden_layers=(128, 64)):
         super(ActorCritic, self).__init__()
@@ -168,26 +168,20 @@ class ActorCritic(nn.Module):
         self.action_param_size = action_param_size
         self.num_discrete_actions = 3
         
-        # 共享特征提取层
         self.shared_layers = nn.ModuleList()
         last_size = state_size
         for hidden_size in hidden_layers:
             self.shared_layers.append(nn.Linear(last_size, hidden_size))
             last_size = hidden_size
         
-        # Actor头 - 离散动作
         self.actor_discrete = nn.Linear(last_size, self.num_discrete_actions)
         
-        # Actor头 - 连续参数均值
         self.actor_param_mean = nn.Linear(last_size, action_param_size)
         
-        # Actor头 - 连续参数对数标准差 (可学习)
         self.actor_param_log_std = nn.Parameter(torch.zeros(action_param_size))
         
-        # Critic头
         self.critic = nn.Linear(last_size, 1)
         
-        # 初始化
         self._init_weights()
     
     def _init_weights(self):
@@ -209,53 +203,41 @@ class ActorCritic(nn.Module):
         for layer in self.shared_layers:
             x = torch.tanh(layer(x))
         
-        # 离散动作概率
         action_logits = self.actor_discrete(x)
         action_probs = F.softmax(action_logits, dim=-1)
         
-        # 连续参数分布
         param_mean = self.actor_param_mean(x)
         param_std = torch.exp(self.actor_param_log_std).expand_as(param_mean)
         
-        # 状态价值
         value = self.critic(x)
         
         return action_probs, param_mean, param_std, value
     
     def get_action_and_value(self, state, discrete_action=None, action_params=None):
         """
-        获取动作和价值估计
+        Get action and value estimate
         
-        如果提供了动作，计算对数概率；否则采样新动作
+        If action is provided, compute log probability; otherwise sample new action
         """
         action_probs, param_mean, param_std, value = self.forward(state)
         
-        # 离散动作分布
         discrete_dist = Categorical(action_probs)
         
-        # 连续参数分布
         param_dist = Normal(param_mean, param_std)
         
         if discrete_action is None:
-            # 采样动作
             discrete_action = discrete_dist.sample()
             action_params = param_dist.sample()
-            action_params = torch.tanh(action_params)  # 限制到[-1, 1]
+            action_params = torch.tanh(action_params)
         
-        # 计算对数概率
         discrete_log_prob = discrete_dist.log_prob(discrete_action)
         
-        # 对于tanh变换后的参数，需要调整对数概率
-        # log_prob(tanh(x)) = log_prob(x) - log(1 - tanh(x)^2)
         raw_params = torch.atanh(torch.clamp(action_params, -0.999, 0.999))
         param_log_prob = param_dist.log_prob(raw_params).sum(dim=-1)
-        # Jacobian校正
         param_log_prob = param_log_prob - torch.log(1 - action_params.pow(2) + 1e-6).sum(dim=-1)
         
-        # 总对数概率
         total_log_prob = discrete_log_prob + param_log_prob
         
-        # 熵
         discrete_entropy = discrete_dist.entropy()
         param_entropy = param_dist.entropy().sum(dim=-1)
         total_entropy = discrete_entropy + param_entropy
@@ -267,7 +249,7 @@ class ActorCritic(nn.Module):
 # Rollout Buffer
 # =======================
 class RolloutBuffer:
-    """PPO经验缓冲区"""
+    """PPO experience buffer"""
     def __init__(self):
         self.states = []
         self.discrete_actions = []
@@ -321,7 +303,7 @@ class LIRLPPOAgent:
     """
     LIRL Agent based on PPO
     
-    PPO特点:
+    PPO features:
     - Clipped surrogate objective
     - GAE (Generalized Advantage Estimation)
     - Value function clipping
@@ -349,21 +331,17 @@ class LIRLPPOAgent:
             np.random.seed(seed)
             torch.manual_seed(seed)
         
-        # 网络
         self.policy = ActorCritic(state_size, action_param_size, hidden_layers).to(device)
         self.optimizer = optim.Adam(self.policy.parameters(), lr=lr, eps=1e-5)
         
-        # 经验缓冲区
         self.buffer = RolloutBuffer()
         
-        # 动作投影器
         self.action_projector = ActionProjection(action_space, use_qp=True)
         
-        # 统计
         self.total_steps = 0
     
     def act(self, state):
-        """选择动作"""
+        """Select action"""
         with torch.no_grad():
             state_tensor = torch.from_numpy(state).float().to(device)
             if len(state_tensor.shape) == 1:
@@ -378,7 +356,6 @@ class LIRLPPOAgent:
             log_prob = log_prob.cpu().numpy().item()
             value = value.cpu().numpy().item()
         
-        # 使用动作投影
         if self.use_action_projection:
             projected_action, projected_params, _ = self.action_projector.project(
                 action_probs, action_params, record_timing=True
@@ -396,13 +373,13 @@ class LIRLPPOAgent:
     
     def store_transition(self, state, discrete_action, action_probs, action_params, 
                          reward, done, log_prob, value):
-        """存储转移"""
+        """Store transition"""
         self.buffer.add(state, discrete_action, action_probs, action_params, 
                         reward, done, log_prob, value)
         self.total_steps += 1
     
     def compute_gae(self, rewards, values, dones, next_value):
-        """计算GAE (Generalized Advantage Estimation)"""
+        """Compute GAE (Generalized Advantage Estimation)"""
         advantages = np.zeros_like(rewards)
         last_gae = 0
         
@@ -419,27 +396,22 @@ class LIRLPPOAgent:
         return advantages, returns
     
     def update(self, next_state):
-        """PPO更新"""
+        """PPO update"""
         if self.buffer.size() == 0:
             return {}
         
-        # 获取数据
         states, discrete_actions, action_probs, action_params, rewards, dones, old_log_probs, values = \
             self.buffer.get()
         
-        # 计算下一个状态的价值
         with torch.no_grad():
             next_state_tensor = torch.from_numpy(next_state).float().to(device).unsqueeze(0)
             _, _, _, _, _, next_value = self.policy.get_action_and_value(next_state_tensor)
             next_value = next_value.cpu().numpy().item()
         
-        # 计算GAE
         advantages, returns = self.compute_gae(rewards, values, dones, next_value)
         
-        # 标准化优势
         advantages = (advantages - advantages.mean()) / (advantages.std() + 1e-8)
         
-        # 转换为张量
         states_t = torch.from_numpy(states).float().to(device)
         discrete_actions_t = torch.from_numpy(discrete_actions).long().to(device)
         action_params_t = torch.from_numpy(action_params).float().to(device)
@@ -448,7 +420,6 @@ class LIRLPPOAgent:
         returns_t = torch.from_numpy(returns).float().to(device)
         old_values_t = torch.from_numpy(values).float().to(device)
         
-        # PPO更新
         total_loss_list = []
         policy_loss_list = []
         value_loss_list = []
@@ -464,7 +435,6 @@ class LIRLPPOAgent:
                 end = start + self.batch_size
                 batch_indices = indices[start:end]
                 
-                # 获取批次数据
                 batch_states = states_t[batch_indices]
                 batch_discrete_actions = discrete_actions_t[batch_indices]
                 batch_action_params = action_params_t[batch_indices]
@@ -473,21 +443,17 @@ class LIRLPPOAgent:
                 batch_returns = returns_t[batch_indices]
                 batch_old_values = old_values_t[batch_indices]
                 
-                # 前向传播
                 _, _, _, new_log_probs, entropy, new_values = \
                     self.policy.get_action_and_value(
                         batch_states, batch_discrete_actions, batch_action_params
                     )
                 
-                # 计算ratio
                 ratio = torch.exp(new_log_probs - batch_old_log_probs)
                 
-                # Clipped surrogate objective
                 surr1 = ratio * batch_advantages
                 surr2 = torch.clamp(ratio, 1 - self.clip_epsilon, 1 + self.clip_epsilon) * batch_advantages
                 policy_loss = -torch.min(surr1, surr2).mean()
                 
-                # Value loss with clipping
                 new_values = new_values.squeeze()
                 value_clipped = batch_old_values + torch.clamp(
                     new_values - batch_old_values, -self.clip_epsilon, self.clip_epsilon
@@ -496,13 +462,10 @@ class LIRLPPOAgent:
                 value_loss2 = (value_clipped - batch_returns).pow(2)
                 value_loss = 0.5 * torch.max(value_loss1, value_loss2).mean()
                 
-                # Entropy bonus
                 entropy_loss = -entropy.mean()
                 
-                # Total loss
                 total_loss = policy_loss + self.c1 * value_loss + self.c2 * entropy_loss
                 
-                # 优化
                 self.optimizer.zero_grad()
                 total_loss.backward()
                 nn.utils.clip_grad_norm_(self.policy.parameters(), 0.5)
@@ -513,7 +476,6 @@ class LIRLPPOAgent:
                 value_loss_list.append(value_loss.item())
                 entropy_list.append(-entropy_loss.item())
         
-        # 清空缓冲区
         self.buffer.clear()
         
         return {
@@ -543,14 +505,14 @@ class LIRLPPOAgent:
 
 
 def pad_action(act, act_param):
-    """将动作转换为环境需要的格式"""
+    """Convert action to format required by environment"""
     params = [np.zeros((2,)), np.zeros((1,)), np.zeros((1,))]
     params[act] = act_param
     return (act, params)
 
 
 def evaluate(env, agent, episodes=1000):
-    """评估agent"""
+    """Evaluate agent"""
     returns = []
     for _ in range(episodes):
         state, _ = env.reset()
@@ -588,7 +550,6 @@ def run(seed, episodes, evaluation_episodes, gamma, gae_lambda, lr, clip_epsilon
         update_epochs, batch_size, rollout_steps, c1, c2, reward_scale,
         use_action_projection, layers, save_dir, title):
     
-    # 创建环境
     env = gym.make('Goal-v0')
     env = GoalObservationWrapper(env)
     env = GoalFlattenedActionWrapper(env)
@@ -617,11 +578,9 @@ def run(seed, episodes, evaluation_episodes, gamma, gae_lambda, lr, clip_epsilon
     torch.manual_seed(seed)
     random.seed(seed)
     
-    # 获取状态和动作维度
     state_size = env.observation_space.spaces[0].shape[0]
-    action_param_size = 4  # kick_to(2) + shoot_left(1) + shoot_right(1)
+    action_param_size = 4
     
-    # 创建Agent
     agent = LIRLPPOAgent(
         state_size=state_size,
         action_param_size=action_param_size,
@@ -641,7 +600,6 @@ def run(seed, episodes, evaluation_episodes, gamma, gae_lambda, lr, clip_epsilon
     
     print(agent)
     
-    # 训练
     max_steps = 150
     total_reward = 0.
     returns = []
@@ -656,17 +614,14 @@ def run(seed, episodes, evaluation_episodes, gamma, gae_lambda, lr, clip_epsilon
         episode_reward = 0.
         
         for _ in range(max_steps):
-            # 选择动作
             action, act_param, action_probs, action_params, log_prob, value = agent.act(state)
             env_action = pad_action(action, act_param)
             
-            # 执行动作
             (next_state, _), reward, terminal, _ = env.step(env_action)
             next_state = np.array(next_state, dtype=np.float32, copy=False)
             
             r = reward * reward_scale
             
-            # 存储转移 (使用原始网络输出的离散动作索引)
             agent.store_transition(state, action, action_probs, action_params, 
                                    r, terminal, log_prob, value)
             
@@ -674,7 +629,6 @@ def run(seed, episodes, evaluation_episodes, gamma, gae_lambda, lr, clip_epsilon
             episode_reward += reward
             step_count += 1
             
-            # PPO更新
             if step_count % rollout_steps == 0:
                 update_info = agent.update(next_state)
             
@@ -696,18 +650,14 @@ def run(seed, episodes, evaluation_episodes, gamma, gae_lambda, lr, clip_epsilon
     env.close()
     print(agent)
     
-    # 打印动作投影统计
     if use_action_projection:
         agent.print_projection_summary()
     
-    # 保存结果
     returns = env.get_episode_rewards()
     np.save(os.path.join(dir, title + "{}".format(str(seed))), returns)
     
-    # 保存模型
     torch.save(agent.policy.state_dict(), os.path.join(dir, 'policy_{}.pth'.format(seed)))
     
-    # 评估
     if evaluation_episodes > 0:
         print("Evaluating agent over {} episodes".format(evaluation_episodes))
         evaluation_returns = evaluate(env, agent, evaluation_episodes)
