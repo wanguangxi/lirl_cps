@@ -1,0 +1,18 @@
+# LIRL-CPS — consolidated Python dependencies
+# Tested with Python 3.10 on Linux and Windows.
+# Install PyTorch separately from https://pytorch.org for your CUDA/CPU build.
+
+numpy>=1.19.0
+scipy>=1.5.0
+pandas>=1.0.0
+matplotlib>=3.3.0
+seaborn>=0.10.0
+torch>=1.7.0
+gymnasium>=0.26.0
+
+# R2AMS (RMS/) — robotic energy model
+roboticstoolbox-python>=1.0.0
+spatialmath-python>=1.0.0
+
+# Optional — parameterized-action Gym domains (MP-DQN/)
+# gym-platform, gym-goal, gym-soccer — see MP-DQN/README.md

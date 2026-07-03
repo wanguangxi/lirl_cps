@@ -1,0 +1,29 @@
+cff-version: 1.2.0
+title: "Logic-Informed Reinforcement Learning for Safe Hybrid Cyber-Physical Systems"
+message: "If you use this software, please cite the associated publication."
+type: software
+authors:
+  - family-names: Wan
+    given-names: Guangxi
+  - family-names: Zeng
+    given-names: Peng
+  - family-names: Dong
+    given-names: Xiaoting
+repository-code: "https://github.com/wanguangxi/lirl_cps"
+license: MIT
+keywords:
+  - reinforcement learning
+  - cyber-physical systems
+  - safe RL
+  - logic-informed learning
+  - hybrid action spaces
+preferred-citation:
+  type: article
+  title: "Logic-informed reinforcement learning enables safe decision-making in hybrid cyber–physical systems"
+  authors:
+    - family-names: Wan
+      given-names: Guangxi
+    - family-names: Zeng
+      given-names: Peng
+  journal: "Nature Communications"
+  year: 2026

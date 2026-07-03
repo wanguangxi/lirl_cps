@@ -1,0 +1,27 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+dist/
+build/
+*.egg
+
+# Virtual environments (root-level only)
+/.venv/
+/venv/
+/env/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Training artifacts (optional — uncomment to exclude large outputs)
+# *_multi_run_*/
+# *.pth
+# *.npy

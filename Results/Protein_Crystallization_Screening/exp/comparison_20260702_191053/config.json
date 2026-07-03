@@ -1,0 +1,34 @@
+{
+  "experiment_config": {
+    "num_episodes": 500,
+    "num_seeds": 10,
+    "seeds": [
+      3047,
+      294,
+      714,
+      1092,
+      1386,
+      2856,
+      42,
+      114514,
+      2025,
+      1993
+    ],
+    "batch_size_env": 2,
+    "horizon": 25,
+    "save_results": true,
+    "plot_results": true
+  },
+  "unified_network_config": {
+    "hidden_dim": 256,
+    "hidden_dim1": 256,
+    "hidden_dim2": 128,
+    "latent_dim": 32,
+    "lirl_hidden_dim": 512,
+    "num_layers": 3,
+    "q_hidden_dim1": 256,
+    "q_hidden_dim2": 128,
+    "param_hidden_dim1": 256,
+    "param_hidden_dim2": 128
+  }
+}
